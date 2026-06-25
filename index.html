@@ -1,9 +1,9 @@
 <!--
   ============================================================
-  @file        : KYF_SHARE_beta1.9.9.140.html
+  @file        : KYF_SHARE_beta2.0.0.3_open_import.html
   @application : Keep Your Folio (KYF)
   @description : Dashboard de suivi de portefeuille financier
-  @version     : Beta 1.9.9.140
+  @version     : Beta 2.0.0.3_open_import
   @author      : Keep Your Folio
   @copyright   : © 2026 Keep Your Folio (KYF). Tous droits réservés.
   @license     : Proprietary — Toute reproduction, distribution ou
@@ -2001,6 +2001,7 @@ select:focus {
 
       </div>
     </div>
+
     <div style="position:relative">
       <input id="etfSearchInput" type="text" placeholder="Nom ou ticker... ex: CW8.PA, AAPL, Amundi"
         oninput="searchYahooETF(this.value)" autocomplete="off"
@@ -2745,7 +2746,7 @@ select:focus {
 
   <!-- Micro-footer sidebar -->
   <div id="sbFooter">
-    <span id="versionBadge" class="sbf-version">Beta 1.9.9.140</span>
+    <span id="versionBadge" class="sbf-version">Beta 2.0.0.3_open_import</span>
     <a href="mailto:contact@keepyourfolio.com" class="sbf-contact" title="Contact &amp; Bugs">Contact &amp; Bugs</a>
   </div>
 
@@ -3038,6 +3039,16 @@ select:focus {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           VUE
         </button>
+        <button onclick="openImportRelevé()" style="display:flex;align-items:center;gap:6px;
+          font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+          padding:7px 14px;border-radius:8px;border:1px solid #06b6d4;
+          background:rgba(6,182,212,0.1);color:#0369a1;cursor:pointer;
+          transition:background .15s;letter-spacing:0.5px"
+          onmouseover="this.style.background='rgba(6,182,212,0.2)'"
+          onmouseout="this.style.background='rgba(6,182,212,0.1)'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          IMPORTER UN RELEVÉ
+        </button>
         <button onclick="openAddETF()" style="display:flex;align-items:center;gap:6px;
           font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
           padding:7px 14px;border-radius:8px;border:1px solid var(--accent);
@@ -3239,7 +3250,7 @@ select:focus {
     </div>
 
     <!-- Métriques narratives (14-23) -->
-    <div id="immoNarratives" style="display:none;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+    <div id="immoNarratives" style="display:none;margin-bottom:16px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
       <div style="padding:12px 14px;border-radius:10px;background:rgba(0,212,136,0.06);border:1px solid rgba(0,212,136,0.2);font-family:'IBM Plex Mono',monospace">
         <div style="font-size:9px;color:var(--text3);letter-spacing:.5px;margin-bottom:4px">VOS LOCATAIRES ONT FINANCÉ</div>
         <div id="immoNarrLocataires" style="font-size:15px;font-weight:700;color:var(--green)">—</div>
@@ -3303,12 +3314,6 @@ select:focus {
 
     <!-- Panneau SCI -->
     <div id="immoTabPanelSCI" style="display:none">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-        <button onclick="openAddSCI()" style="display:flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:7px 14px;border-radius:8px;border:none;background:var(--accent);color:#000;cursor:pointer">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          AJOUTER UNE SCI
-        </button>
-      </div>
       <div id="sciList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px">
         <div id="sciEmpty" style="grid-column:1/-1">
           <div style="text-align:center;padding:32px 20px 24px;background:var(--bg2);border:1px dashed var(--border2);border-radius:14px;font-family:'IBM Plex Mono',monospace">
@@ -3441,7 +3446,7 @@ select:focus {
     </div>
 
     <!-- Visualisations SCPI -->
-    <div id="scpiCharts" style="display:none;margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div id="scpiCharts" style="display:none;margin-top:20px;grid-template-columns:1fr 1fr;gap:14px">
 
       <!-- Donut secteurs consolidé -->
       <div class="card" style="padding:16px">
@@ -6460,7 +6465,11 @@ async function oauthExchangeCode(code, verifier){
   const KYF_OAUTH_PROXY = 'https://script.google.com/macros/s/AKfycbzQ0WfR0MLDNGt30pNOVlGxie1mHKWTQ95hzfS3IAC1lFqm7PAWFAhoQYifGUGWhcYz3Q/exec';
   try {
     const params = new URLSearchParams({ action: 'exchangeCode', code, code_verifier: verifier });
-    const r = await fetch(`${KYF_OAUTH_PROXY}?${params}`, { method: 'GET' });
+    const r = await fetch(KYF_OAUTH_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // évite le préflight CORS sur Apps Script
+      body: params.toString()
+    });
     const d = await r.json();
     if(d.access_token){
       localStorage.setItem('kyf-oauth-token',   d.access_token);
@@ -6486,7 +6495,11 @@ async function oauthGetToken(){
   const KYF_OAUTH_PROXY = 'https://script.google.com/macros/s/AKfycbzQ0WfR0MLDNGt30pNOVlGxie1mHKWTQ95hzfS3IAC1lFqm7PAWFAhoQYifGUGWhcYz3Q/exec';
   try {
     const params = new URLSearchParams({ action: 'refreshToken', refresh_token: refresh });
-    const r = await fetch(`${KYF_OAUTH_PROXY}?${params}`, { method: 'GET' });
+    const r = await fetch(KYF_OAUTH_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: params.toString()
+    });
     const d = await r.json();
     if(d.access_token){
       localStorage.setItem('kyf-oauth-token',  d.access_token);
@@ -13562,6 +13575,349 @@ function etfCalcInvesti(){
 }
 
 // ── Confirmer ajout / modification ───────────────────────────
+// ════════════════════════════════════════════════════════════════
+// IMPORT RELEVÉ COURTIER — Fortuneo CSV
+// Adapté de la contribution externe (parsing CSV + résolution ISIN→ticker),
+// branché sur nos structures existantes (_etfHints, kyfDBLoad, ETF, etfSave).
+// ════════════════════════════════════════════════════════════════
+
+function fiParseCSVLine(line, delimiter){
+  const out = [];
+  let cur = '', inQuotes = false;
+  for(let i=0;i<line.length;i++){
+    const ch = line[i], next = line[i+1];
+    if(ch === '"'){
+      if(inQuotes && next === '"'){ cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if(ch === delimiter && !inQuotes){
+      out.push(cur.trim()); cur = '';
+    } else cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+function fiParseNum(v){
+  if(!v) return 0;
+  return parseFloat(String(v).replace(/[\s\u00A0€]/g,'').replace(',','.')) || 0;
+}
+
+function fiNormalizeISIN(v){ return String(v||'').trim().replace(/[\s-]/g,'').toUpperCase(); }
+function fiNormalizeTicker(v){ return String(v||'').trim().replace(/\\(?=\.)/g,'').toUpperCase(); }
+function fiIsCompleteISIN(v){ return /^[A-Z]{2}[A-Z0-9]{10}$/.test(fiNormalizeISIN(v)); }
+
+const FI_YAHOO_TO_GOOGLE = {
+  '.PA':'EPA','.DE':'ETR','.F':'FRA','.MI':'BIT','.AS':'AMS','.BR':'EBR','.MC':'BME',
+  '.L':'LON','.SW':'SWX','.HK':'HKG','.T':'TYO','.KS':'KRX','.AX':'ASX','.TO':'TSE',
+  '.V':'CVE','.CO':'CPH','.ST':'STO','.OL':'OSL','.HE':'HEL','.LS':'ELI','.VI':'VIE',
+  '.WA':'WSE','.PR':'PRA','.IR':'DUB','.SI':'SGX','.NZ':'NZE','.SA':'BVMF','.MX':'BMV'
+};
+function fiSuggestGoogleTicker(yahooTicker){
+  const t = fiNormalizeTicker(yahooTicker);
+  if(!t || t.includes(':')) return '';
+  const suffix = Object.keys(FI_YAHOO_TO_GOOGLE).sort((a,b)=>b.length-a.length).find(s=>t.endsWith(s));
+  if(!suffix) return '';
+  const root = t.slice(0,-suffix.length);
+  return root ? `${root}:${FI_YAHOO_TO_GOOGLE[suffix]}` : '';
+}
+
+function fiExtractParens(label){
+  const segs = []; const re = /\(([^()]+)\)/g; let m;
+  while((m = re.exec(String(label||''))) !== null){ const s=m[1]?.trim(); if(s) segs.push(s); }
+  return segs;
+}
+function fiLabelWithoutParens(label){ return String(label||'').replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim(); }
+function fiLooksLikeTicker(value){
+  const c = fiNormalizeTicker(value);
+  if(!c || c.length > 16 || fiIsCompleteISIN(c)) return false;
+  return /^[A-Z0-9][A-Z0-9.-]{0,15}$/.test(c);
+}
+function fiParseLabelHints(nom){
+  const segments = fiExtractParens(nom);
+  const tickers = [], searchTerms = [];
+  segments.forEach(seg=>{
+    if(fiLooksLikeTicker(seg)) tickers.push(fiNormalizeTicker(seg));
+    else if(seg.length>=2) searchTerms.push(seg);
+  });
+  return { cleanName: fiLabelWithoutParens(nom), tickers, searchTerms };
+}
+function fiNormalizeLabelText(value){
+  return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s.-]/g,' ').replace(/\s+/g,' ').trim();
+}
+function fiTickerMatchesHint(ticker, hintTicker){
+  const t = fiNormalizeTicker(ticker), h = fiNormalizeTicker(hintTicker);
+  if(!t || !h) return false;
+  if(t === h) return true;
+  const tRoot = t.replace(/\.\w+$/,''), hRoot = h.replace(/\.\w+$/,'');
+  return tRoot === hRoot || t.startsWith(hRoot+'.') || h.startsWith(tRoot+'.');
+}
+function fiScoreResult(result, labelHints){
+  if(!result || !labelHints) return 0;
+  let score = 0;
+  const ticker = fiNormalizeTicker(result.ticker);
+  const names = [result.name].filter(Boolean).map(fiNormalizeLabelText);
+  labelHints.tickers.forEach(pt=>{
+    if(fiTickerMatchesHint(ticker,pt)) score += 120;
+    else if(ticker.includes(fiNormalizeTicker(pt).replace(/\.\w+$/,''))) score += 40;
+  });
+  [...labelHints.searchTerms, labelHints.cleanName].filter(Boolean).forEach(term=>{
+    const t = fiNormalizeLabelText(term);
+    if(!t) return;
+    names.forEach(n=>{ if(n===t) score+=80; else if(n.includes(t)||t.includes(n)) score+=45; });
+  });
+  if(ticker.endsWith('.PA')) score += 4;
+  return score;
+}
+function fiPickPreferred(results, nom){
+  const list = (results||[]).filter(r=>fiNormalizeTicker(r.ticker));
+  if(!list.length) return null;
+  const hints = fiParseLabelHints(nom);
+  for(const pt of hints.tickers){
+    const exact = list.find(r=>fiTickerMatchesHint(r.ticker,pt));
+    if(exact) return exact;
+  }
+  if(hints.tickers.length || hints.searchTerms.length || hints.cleanName){
+    const scored = list.map(r=>({r,score:fiScoreResult(r,hints)})).sort((a,b)=>b.score-a.score);
+    if(scored[0]?.score > 0) return scored[0].r;
+  }
+  return list.find(r=>fiNormalizeTicker(r.ticker).endsWith('.PA')) || list[0];
+}
+
+// Recherche locale dans notre base _etfHints (déjà chargée via kyfDBLoad)
+async function fiFindHintsByISIN(isin){
+  try { await kyfDBLoad(); } catch(e){}
+  const normalized = fiNormalizeISIN(isin);
+  const hints = Array.isArray(window._etfHints) ? window._etfHints : [];
+  return hints.filter(h=>fiNormalizeISIN(h.isin)===normalized).map(h=>({...h, ticker:fiNormalizeTicker(h.ticker)}));
+}
+function fiFindHintsByName(query){
+  const hints = Array.isArray(window._etfHints) ? window._etfHints : [];
+  const qn = fiNormalizeLabelText(query);
+  if(!qn) return [];
+  return hints.filter(h=>fiNormalizeLabelText(h.name).includes(qn) || fiNormalizeLabelText(h.ticker).includes(qn));
+}
+
+// Fallback : recherche en ligne sur Yahoo Finance Search (pas utilisé par KYF actuellement,
+// nécessaire pour les valeurs absentes de notre base locale _etfHints)
+async function fiYahooSearch(query){
+  if(!query) return [];
+  try {
+    const res = await fetch(`https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&lang=fr&region=FR&quotesCount=12`);
+    if(!res.ok) return [];
+    const data = await res.json();
+    return (data.quotes||[]).filter(q=>q.symbol).map(q=>({
+      ticker: q.symbol, name: q.shortname || q.longname || q.symbol,
+      type: q.quoteType === 'ETF' ? 'ETF' : 'Action'
+    }));
+  } catch(e){ return []; }
+}
+
+async function fiSearchFromLabel(nom, isin){
+  const hints = fiParseLabelHints(nom);
+  const queries = [];
+  hints.tickers.forEach(v=>queries.push({kind:'ticker',value:v}));
+  hints.searchTerms.forEach(v=>queries.push({kind:'text',value:v}));
+  if(hints.cleanName) queries.push({kind:'text',value:hints.cleanName});
+  for(const q of queries){
+    if(q.kind === 'ticker'){
+      const local = fiFindHintsByName(q.value);
+      const picked = fiPickPreferred(local, nom);
+      if(picked?.ticker) return picked;
+      const yh = await fiYahooSearch(q.value);
+      const pickedYh = fiPickPreferred(yh, nom);
+      if(pickedYh?.ticker) return pickedYh;
+    } else {
+      const yh = await fiYahooSearch(q.value);
+      const picked = fiPickPreferred(yh, nom);
+      if(picked?.ticker) return picked;
+    }
+  }
+  return null;
+}
+
+async function fiResolveTicker(nom, isin){
+  // 1. Base locale par ISIN
+  const localHints = await fiFindHintsByISIN(isin);
+  let picked = fiPickPreferred(localHints, nom);
+  if(picked?.ticker) return picked;
+  // 2. Indices entre parenthèses dans le libellé + recherche
+  picked = await fiSearchFromLabel(nom, isin);
+  if(picked?.ticker) return picked;
+  // 3. Yahoo Search direct sur le nom nettoyé
+  const query = fiLabelWithoutParens(nom) || nom || isin;
+  const yh = await fiYahooSearch(query);
+  return fiPickPreferred(yh, nom);
+}
+
+// ── Parsing du CSV Fortuneo ──────────────────────────────────────
+function fiParseFortuneoCSV(text){
+  const lines = text.split(/\r\n|\n/);
+  const delimiter = (lines[0]||'').includes(';') ? ';' : ',';
+  let headerLineIdx = -1, headers = [];
+  for(let i=0;i<Math.min(lines.length,12);i++){
+    const cols = fiParseCSVLine(lines[i], delimiter);
+    if(cols.some(h=>h.toUpperCase()==='ISIN')){ headerLineIdx = i; headers = cols; break; }
+  }
+  if(headerLineIdx < 0) throw new Error("Colonne 'ISIN' non trouvée — vérifiez que le fichier est bien un export de positions Fortuneo");
+
+  const upper = h => String(h||'').toUpperCase();
+  const isinIdx = headers.findIndex(h=>upper(h)==='ISIN');
+  const nomIdx  = headers.findIndex(h=>upper(h).includes('LIBELLÉ')||upper(h).includes('LIBELLE')||upper(h).includes('NOM')||upper(h).includes('DESIGNATION')||upper(h).includes('VALEUR'));
+  const qtyIdx  = headers.findIndex(h=>upper(h).includes('QUANTITÉ')||upper(h).includes('QUANTITE')||upper(h)==='QTÉ');
+  const pruIdx  = headers.findIndex(h=>upper(h).includes('PRIX REVIENT')||upper(h).includes('PRIX DE REVIENT')||upper(h)==='PRU');
+  if(isinIdx < 0 || qtyIdx < 0) throw new Error('Colonnes ISIN ou quantité introuvables dans le fichier');
+
+  const rows = [];
+  for(let i=headerLineIdx+1;i<lines.length;i++){
+    const line = lines[i].trim();
+    if(!line) continue;
+    const cols = fiParseCSVLine(line, delimiter);
+    const isin = fiNormalizeISIN(cols[isinIdx]);
+    const qty  = qtyIdx>=0 ? fiParseNum(cols[qtyIdx]) : 0;
+    const pru  = pruIdx>=0 ? fiParseNum(cols[pruIdx]) : 0;
+    const nom  = nomIdx>=0 ? (cols[nomIdx]||'').trim() : '';
+    if(!isin || qty<=0) continue;
+    rows.push({isin, nom, qty, pru});
+  }
+  return rows;
+}
+
+let _fiPendingResolved = [];
+let _fiPendingMissing  = [];
+let _fiPendingEnveloppe = 'PEA';
+
+async function openImportRelevé(){
+  document.getElementById('importRelevéModal').style.display = 'flex';
+  document.getElementById('importRelevéOverlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  document.getElementById('importRelevéFile').value = '';
+  document.getElementById('importRelevéStatus').textContent = '';
+}
+function closeImportRelevé(){
+  document.getElementById('importRelevéModal').style.display = 'none';
+  document.getElementById('importRelevéOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+async function handleImportRelevéFile(input){
+  const file = input.files?.[0];
+  if(!file) return;
+  const statusEl = document.getElementById('importRelevéStatus');
+  _fiPendingEnveloppe = document.getElementById('importRelevéEnveloppe').value;
+  statusEl.innerHTML = '⏳ Lecture du fichier...';
+  try {
+    const text = await file.text();
+    const rows = fiParseFortuneoCSV(text);
+    if(!rows.length){ statusEl.innerHTML = '<span style="color:var(--red)">⚠️ Aucune position trouvée dans ce fichier.</span>'; return; }
+    statusEl.innerHTML = `⏳ ${rows.length} ligne(s) trouvée(s) — résolution des tickers...`;
+
+    const resolved = [], missing = [];
+    for(const row of rows){
+      const hint = await fiResolveTicker(row.nom, row.isin);
+      const ticker = fiNormalizeTicker(hint?.ticker||'');
+      const name   = hint?.name || fiLabelWithoutParens(row.nom) || row.nom || row.isin;
+      if(ticker){ resolved.push({...row, ticker, name}); }
+      else { missing.push({...row, name}); }
+      statusEl.innerHTML = `⏳ Résolution ${resolved.length+missing.length}/${rows.length}...`;
+    }
+    _fiPendingResolved = resolved;
+    _fiPendingMissing  = missing;
+
+    statusEl.innerHTML = `✅ ${resolved.length} ligne(s) reconnue(s) automatiquement` + (missing.length?`, ${missing.length} à compléter`:'');
+    fiRenderPreview();
+  } catch(e){
+    statusEl.innerHTML = `<span style="color:var(--red)">⚠️ ${e.message}</span>`;
+  }
+}
+
+function fiRenderPreview(){
+  const el = document.getElementById('importRelevéPreview');
+  if(!el) return;
+  let html = '';
+  if(_fiPendingResolved.length){
+    html += `<div style="font-size:10px;font-weight:700;color:var(--green);margin:10px 0 6px">✅ RECONNUES (${_fiPendingResolved.length})</div>`;
+    html += _fiPendingResolved.map((r,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px">
+        <span style="color:var(--text)">${r.name} <span style="color:var(--text3);font-size:9px">${r.ticker}</span></span>
+        <span style="color:var(--text2)">${r.qty} × ${fmt(r.pru,2)} €</span>
+      </div>`).join('');
+  }
+  if(_fiPendingMissing.length){
+    html += `<div style="font-size:10px;font-weight:700;color:var(--accent);margin:14px 0 6px">⚠️ À COMPLÉTER (${_fiPendingMissing.length})</div>`;
+    html += _fiPendingMissing.map((r,i)=>`
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${r.name||r.isin}</span>
+          <div style="display:flex;gap:4px">
+            <button type="button" onclick="fiSetMissingMode(${i},'ticker')" id="fiModeBtnTicker${i}" style="font-size:8px;font-weight:700;padding:3px 7px;border-radius:4px;border:1px solid var(--accent);background:rgba(240,180,41,0.15);color:var(--accent);cursor:pointer">TICKER</button>
+            <button type="button" onclick="fiSetMissingMode(${i},'fixed')" id="fiModeBtnFixed${i}" style="font-size:8px;font-weight:700;padding:3px 7px;border-radius:4px;border:1px solid var(--border2);background:rgba(255,255,255,0.04);color:var(--text3);cursor:pointer">PRIX FIXE</button>
+          </div>
+        </div>
+        <input id="fiMissingTicker${i}" placeholder="Ticker Yahoo (ex: CW8.PA)" style="width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:6px 8px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,0.07);color:var(--text)">
+        <input id="fiMissingFixed${i}" placeholder="Valeur unitaire (€)" inputmode="decimal" value="${r.pru>0?r.pru:''}" style="display:none;width:100%;box-sizing:border-box;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:6px 8px;border-radius:5px;border:1px solid var(--border2);background:rgba(255,255,255,0.07);color:var(--text)">
+      </div>`).join('');
+  }
+  el.innerHTML = html || '<div style="text-align:center;color:var(--text3);font-size:11px;padding:20px 0">Aucune ligne à importer.</div>';
+}
+
+function fiSetMissingMode(i, mode){
+  const tickerInput = document.getElementById('fiMissingTicker'+i);
+  const fixedInput  = document.getElementById('fiMissingFixed'+i);
+  const btnTicker   = document.getElementById('fiModeBtnTicker'+i);
+  const btnFixed    = document.getElementById('fiModeBtnFixed'+i);
+  if(!tickerInput || !fixedInput) return;
+  tickerInput.style.display = mode==='fixed' ? 'none' : 'block';
+  fixedInput.style.display  = mode==='fixed' ? 'block' : 'none';
+  if(btnTicker){ btnTicker.style.borderColor = mode==='ticker'?'var(--accent)':'var(--border2)'; btnTicker.style.background = mode==='ticker'?'rgba(240,180,41,0.15)':'rgba(255,255,255,0.04)'; btnTicker.style.color = mode==='ticker'?'var(--accent)':'var(--text3)'; }
+  if(btnFixed){ btnFixed.style.borderColor = mode==='fixed'?'var(--accent)':'var(--border2)'; btnFixed.style.background = mode==='fixed'?'rgba(240,180,41,0.15)':'rgba(255,255,255,0.04)'; btnFixed.style.color = mode==='fixed'?'var(--accent)':'var(--text3)'; }
+}
+
+function fiConfirmImport(){
+  const enveloppe = _fiPendingEnveloppe;
+  let count = 0;
+
+  _fiPendingResolved.forEach(r=>{
+    ETF.push({
+      name: r.name, ticker: r.ticker, isin: r.isin, pru: r.pru, qty: r.qty,
+      montant: r.pru * r.qty, enveloppe,
+      color: _etfColors[ETF.length % _etfColors.length]
+    });
+    count++;
+  });
+
+  _fiPendingMissing.forEach((r,i)=>{
+    const fixedInput = document.getElementById('fiMissingFixed'+i);
+    const isFixedMode = fixedInput && fixedInput.style.display !== 'none';
+    if(isFixedMode){
+      const val = parseNum(fixedInput.value);
+      if(!val || val <= 0) return; // ligne ignorée si prix fixe non renseigné
+      ETF.push({
+        name: r.name||r.isin, ticker: r.isin, isin: r.isin, pru: val, qty: r.qty,
+        montant: val * r.qty, enveloppe, valuationMode: 'static',
+        color: _etfColors[ETF.length % _etfColors.length]
+      });
+      count++;
+      return;
+    }
+    const ticker = fiNormalizeTicker(document.getElementById('fiMissingTicker'+i)?.value||'');
+    if(!ticker) return; // ligne ignorée si toujours non renseignée
+    ETF.push({
+      name: r.name||r.isin, ticker, isin: r.isin, pru: r.pru, qty: r.qty,
+      montant: r.pru * r.qty, enveloppe,
+      color: _etfColors[ETF.length % _etfColors.length]
+    });
+    count++;
+  });
+
+  etfSave();
+  renderETFTable(window._lp||{});
+  renderDonut();
+  fetchAllPrices();
+  closeImportRelevé();
+  alert(`✅ ${count} position(s) importée(s) dans votre portefeuille ${enveloppe}.`);
+}
+
+
 function confirmAddETF(){
   const err  = document.getElementById('etfAddError');
   const pru  = parseNum(document.getElementById('etfPRU').value);
@@ -13632,6 +13988,7 @@ function deleteETF(idx){
   renderDonut();
   renderKPIs(window._lp || {});
 }
+
 
 // ── Palette couleurs ──────────────────────────────────────────
 const _etfColors = ['#4d9fff','#9b6dff','#f0b429','#00b894','#ff4560','#00cec9','#fd79a8','#6c5ce7','#e17055','#55efc4'];
@@ -23838,7 +24195,7 @@ document.addEventListener('DOMContentLoaded', renderCashKPI);
   <!-- Version actuelle -->
   <div style="background:linear-gradient(135deg,rgba(0,21,255,0.35) 0%,rgba(255,255,255,0.08) 50%,rgba(255,0,0,0.35) 100%);border-radius:8px;padding:10px 12px;margin-bottom:14px;outline:2px solid rgba(0,21,255,0.5)">
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <span id="versionBadgeAbout" style="font-size:16px;font-weight:700;color:var(--text-hi)">Beta 1.9.9.140</span>
+      <span id="versionBadgeAbout" style="font-size:16px;font-weight:700;color:var(--text-hi)">Beta 2.0.0.3_open_import</span>
       <span style="font-size:10px;color:var(--text3)">31/05/2026</span>
     </div>
     <div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.7">
@@ -30386,7 +30743,7 @@ function orInlineEdit(id, td, currentVal){
     </div>
     <input type="hidden" id="avPosTicker">
 
-    <div id="avPosRowPRUQty" style="display:none;grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div id="avPosRowPRUQty" style="display:none;grid-column:span 2;grid-template-columns:1fr 1fr;gap:10px">
       <div>
         <div style="font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.5px">PRU (€)</div>
         <input id="avPosPRU" type="text" inputmode="decimal" placeholder="420.50"
@@ -31933,6 +32290,44 @@ function orInlineEdit(id, td, currentVal){
   <div style="display:flex;gap:8px">
     <button onclick="closeCashEdit()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:9px;border-radius:8px;border:1px solid var(--border2);background:rgba(255,255,255,0.07);color:var(--text2);cursor:pointer">Annuler</button>
     <button onclick="saveCashEdit()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:9px;border-radius:8px;border:none;background:var(--accent);color:#000;cursor:pointer">Enregistrer</button>
+  </div>
+</div>
+
+<!-- ══════════ MODAL IMPORT RELEVÉ COURTIER ══════════ -->
+<div id="importRelevéOverlay" onclick="closeImportRelevé()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);z-index:10020"></div>
+<div id="importRelevéModal" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(560px,95vw);max-height:88vh;z-index:10021;background:var(--bg2);border:1px solid var(--border2);
+  border-radius:16px;padding:24px;font-family:'IBM Plex Mono',monospace;flex-direction:column">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-shrink:0">
+    <span style="font-size:13px;font-weight:700;color:var(--text)">📥 IMPORTER UN RELEVÉ</span>
+    <button onclick="closeImportRelevé()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">✕</button>
+  </div>
+  <div style="font-size:9px;color:var(--text3);margin-bottom:16px;flex-shrink:0">Fortuneo · export positions au format CSV (depuis XLS, convertissez via Excel/LibreOffice/Google Sheets)</div>
+
+  <div style="margin-bottom:12px;flex-shrink:0">
+    <div style="font-size:9px;color:var(--text3);margin-bottom:4px;letter-spacing:.5px">ENVELOPPE DE DESTINATION</div>
+    <select id="importRelevéEnveloppe" style="width:100%;box-sizing:border-box;background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 10px;border-radius:6px;outline:none">
+      <option value="PEA">PEA</option>
+      <option value="CTO">Compte-Titres (CTO)</option>
+    </select>
+  </div>
+
+  <div style="margin-bottom:12px;flex-shrink:0">
+    <label style="display:flex;align-items:center;justify-content:center;gap:8px;padding:20px;border:1px dashed var(--border2);border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.03)">
+      <span style="font-size:20px">📄</span>
+      <span style="font-size:11px;color:var(--text2)">Cliquez pour choisir votre fichier .csv</span>
+      <input id="importRelevéFile" type="file" accept=".csv" onchange="handleImportRelevéFile(this)" style="display:none">
+    </label>
+  </div>
+
+  <div id="importRelevéStatus" style="font-size:10px;color:var(--text2);margin-bottom:10px;flex-shrink:0"></div>
+
+  <div id="importRelevéPreview" style="flex:1;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;max-height:300px"></div>
+
+  <div style="display:flex;gap:8px;flex-shrink:0">
+    <button onclick="closeImportRelevé()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:9px;border-radius:8px;border:1px solid var(--border2);background:rgba(255,255,255,0.07);color:var(--text2);cursor:pointer">Annuler</button>
+    <button onclick="fiConfirmImport()" style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:9px;border-radius:8px;border:none;background:#06b6d4;color:#000;cursor:pointer">Importer</button>
   </div>
 </div>
 
