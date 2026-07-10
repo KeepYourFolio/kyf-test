@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v177</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v178</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -4056,6 +4056,51 @@
 
       // Dédupliquer les blocs identiques consécutifs (doublon OCR fréquent sur Boursobank PER)
       const dedupedLines = rawLines.filter((l, i) => i === 0 || l.trim() !== rawLines[i-1].trim());
+
+      // ── Passe 0 : fusion générique "bloc d'actif" autour de chaque ISIN ─────
+      // Principe : toute ligne de texte qui suit un ISIN (ou qui précède un ISIN
+      // sans être elle-même un stop marker) appartient au même bloc de nom, quel
+      // que soit le nombre de lignes. On s'arrête dès qu'on rencontre un nouveau
+      // stop marker : nouvel ISIN, ligne d'en-tête, devise isolée, ou description
+      // métal. Cette passe remplace le raisonnement "ligne par ligne" par un
+      // raisonnement "bloc jusqu'à stop", plus robuste aux noms de fonds répartis
+      // sur 2, 3, 4 lignes ou plus (fréquent chez Banque Postale, Linxea, Esalia...).
+      // Les heuristiques historiques ci-dessous restent en filet de sécurité pour
+      // les cas résiduels que cette passe ne couvrirait pas parfaitement.
+      function isStopMarker(line) {
+        const t = line.trim();
+        if (HEADER_LINE_RE.test(t) || headerWordsRe.test(t) || looksLikeNoiseLine(t)) return true;
+        if (isolatedCurrencyRe.test(t)) return true;
+        if (metalDescRe.test(t)) return true;
+        return false;
+      }
+      const preBlocks = [];
+      let currentBlock = [];
+      let currentBlockHasIsin = false;
+      for (const line of dedupedLines) {
+        if (isStopMarker(line)) {
+          if (currentBlock.length) { preBlocks.push({ text: currentBlock.join(' '), hasIsin: currentBlockHasIsin }); currentBlock = []; currentBlockHasIsin = false; }
+          continue;
+        }
+        const hasIsinHere = ISIN_LIKE_LOOSE_RE.test(line);
+        if (hasIsinHere && currentBlockHasIsin) {
+          // Un bloc ne peut contenir qu'un seul ISIN : celui-ci démarre un nouveau bloc
+          preBlocks.push({ text: currentBlock.join(' '), hasIsin: currentBlockHasIsin });
+          currentBlock = [line];
+          currentBlockHasIsin = true;
+        } else {
+          currentBlock.push(line);
+          if (hasIsinHere) currentBlockHasIsin = true;
+        }
+      }
+      if (currentBlock.length) preBlocks.push({ text: currentBlock.join(' '), hasIsin: currentBlockHasIsin });
+
+      // Si cette passe générique donne déjà exactement le nombre de supports attendu
+      // (targetCount), on l'utilise directement — c'est le cas le plus fiable, sans
+      // recours aux heuristiques plus fragiles ci-dessous.
+      if (targetCount > 0 && preBlocks.length === targetCount) {
+        return preBlocks.map(b => b.text);
+      }
 
       const blocks = [];
       for (const line of dedupedLines) {
