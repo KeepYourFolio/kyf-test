@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v175</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v176</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -4344,6 +4344,11 @@
       const mergedLines = [];
       let pendingPrefix = '';
       const headerWordsRe = /quantit[eé]|\bqt[eé]\b|\bpru\b|prix\s*(moyen|de\s*revient)/i;
+      // Une ligne "fonds euro" (ex: "CACHEMIRE PER EUROS") est une ligne complète en soi,
+      // même sans ISIN ni 2 nombres visibles (le montant peut être dans une colonne ignorée
+      // par le cadrage). On ne la fusionne jamais avec la ligne suivante pour éviter de
+      // mélanger deux supports différents en une seule ligne corrompue.
+      const EURO_FUND_LINE_RE = /\beuros?\b|\bfonds?\s*euros?\b/i;
       for (const rawLine of rawLines) {
         if (HEADER_LINE_RE.test(rawLine) || headerWordsRe.test(rawLine)) {
           pendingPrefix = '';
@@ -4352,7 +4357,8 @@
         }
         const hasIsin = ISIN_LIKE_LOOSE_RE.test(rawLine);
         const numCount = [...rawLine.matchAll(new RegExp(NUM_RE, 'g'))].length;
-        const looksLikeFragment = !hasIsin && numCount < 2 && rawLine.length < 60;
+        const isEuroFundLine = EURO_FUND_LINE_RE.test(rawLine) && rawLine.length < 60;
+        const looksLikeFragment = !hasIsin && !isEuroFundLine && numCount < 2 && rawLine.length < 60;
         if (looksLikeFragment) {
           pendingPrefix += (pendingPrefix ? ' ' : '') + rawLine;
         } else {
@@ -4373,7 +4379,17 @@
         // avec ceux des colonnes quantité/PRU.
         const withoutIsin = isin ? rawLine.replace(isin, ' ') : rawLine;
         const numberMatches = [...withoutIsin.matchAll(new RegExp(NUM_RE, 'g'))];
-        if (numberMatches.length < 2) continue;
+
+        // Fonds euro sans chiffres visibles (ex: "CACHEMIRE PER EUROS") : ligne valide en soi,
+        // conservée avec qty/pru vides plutôt que perdue — l'utilisateur les saisira à la main
+        // si besoin, comme pour tout support en fonds euro classique.
+        if (numberMatches.length < 2) {
+          if (EURO_FUND_LINE_RE.test(withoutIsin) && withoutIsin.trim().length < 60) {
+            const nomEuro = cleanOcrName(withoutIsin.trim());
+            if (nomEuro) rows.push({ isin, nom: nomEuro, qty: '', pru: '', _uncertain: false });
+          }
+          continue;
+        }
 
         // Les deux derniers nombres de la ligne sont quasi toujours les colonnes quantité/PRU
         // (le nom du support ne contient généralement pas de virgule décimale en fin de mot).
