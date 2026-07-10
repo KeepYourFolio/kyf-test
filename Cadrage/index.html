@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v180</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v181</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -2954,8 +2954,13 @@
         { key: 'qty', label: 'Quantité', shortLabel: 'QUANTITÉ uniquement', skippable: false },
         { key: 'pru', label: 'PRU', shortLabel: 'PRU uniquement', skippable: true },
       ];
-      if (accountMode === 'av_per') {
-        steps.push({ key: 'montant', label: 'Montant atteint', shortLabel: 'MONTANT ATTEINT (Fonds Euro)', skippable: true });
+      // Étape "Montant" optionnelle pour tous les modes (pas seulement AV/PER) : sert de
+      // référence pour valider automatiquement Qty × PRU ≈ Montant et corriger les erreurs
+      // OCR de séparateur décimal manquant. Toujours "skippable" : l'utilisateur peut
+      // l'ignorer si son relevé n'affiche pas cette colonne, sans que ça bloque le reste.
+      if (accountMode !== 'crypto') {
+        const montantLabel = accountMode === 'av_per' ? 'Montant atteint' : 'Montant / Valorisation';
+        steps.push({ key: 'montant', label: montantLabel, shortLabel: 'MONTANT (optionnel — aide à valider les calculs)', skippable: true });
       }
       return steps;
     }
