@@ -2436,6 +2436,23 @@
     // montant, pas de compte, pas de donnée personnelle.
     const GAS_ISIN_URL = 'https://script.google.com/macros/s/AKfycbz259-8Y91pJe6BHcuax3BbosF1N8aR0c0D9GFpeeNHYLZ42PKweqDOorPYc2zdP7DB3w/exec';
 
+    // ── Correction ciblée décodeur Type3 Boursobank PER ──────────────────────
+    // Ce décodeur spécifique confond systématiquement certains glyphes
+    // (G→C, "iS"→"PD_l"/"PD-l"). Appliqué UNIQUEMENT quand cette signature de
+    // corruption précise est détectée, pour ne jamais fausser les autres
+    // courtiers dont les noms sont déjà correctement décodés.
+    function fixBoursoPerType3(nom) {
+      if (!/^PD[-_]l/i.test(nom)) return nom;
+      return nom
+        .replace(/^PD[-_]lSHARES/i, 'iShares')
+        .replace(/\bESC\b/g, 'ESG')
+        .replace(/\bCTE\b/g, '')
+        .replace(/\bEURCPE\b/gi, 'Europe')
+        .replace(/\bHEDCED\b/gi, 'Hedged')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
     // ── Nettoyage léger du nom avant recherche ───────────────────────────────
     // Supprime les mots parasites communs qui n'aident pas OpenFIGI et qui
     // varient selon les courtiers (ETF, UCITS, ACC, EUR...). Reste volontairement
@@ -2443,7 +2460,8 @@
     // pas d'une liste de substitutions caractère par caractère qui ne passerait
     // pas à l'échelle (I↔l, S↔5, G↔C... il en existe des centaines).
     function cleanNameForSearch(nom) {
-      return nom
+      const fixed = fixBoursoPerType3(nom);
+      return fixed
         .replace(/\b(UCITS|ETF|ETC|ACC|DIST|EUR|USD|GBP|CHF|CLASS|PART|FUND)\b/gi, '')
         .replace(/[-_]+/g, ' ')
         .replace(/\s+/g, ' ')
