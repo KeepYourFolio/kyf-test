@@ -420,16 +420,7 @@
   }
   .row-remove:hover { color: var(--red); }
 
-  .isin-search-btn {
-    position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
-    background: var(--accent); border: none; color: #fff;
-    cursor: pointer; padding: 3px; border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  }
-  .isin-search-btn:hover { background: var(--green); transform: translateY(-50%) scale(1.08); }
-  .isin-search-btn:disabled { opacity: 0.6; cursor: wait; }
-  @keyframes spin { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
   /* ── Buttons ──────────────────────────────────────────── */
   .actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
@@ -2376,11 +2367,8 @@
         const isinTitle = isinSuspect ? 'title="Code de contrôle ISIN invalide — probable erreur OCR, à vérifier contre le PDF"' : '';
         const pdfUncertainClass = r._uncertain ? 'field-uncertain' : '';
         const pdfUncertainTitle = r._uncertain ? (r._singleValue ? singleValueTitle : orderUncertainTitle) : '';
-        const isinSearchBtn = (isinSuspect || isinMissing)
-          ? `<button class="isin-search-btn" onclick="searchIsinByName(this)" title="Rechercher l'ISIN sur internet (OpenFIGI)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>`
-          : '';
         tr.innerHTML = `
-          <td style="position:relative;"><input value="${escapeAttr(r.isin || '')}" data-field="isin" ${isinTitle || `title="${escapeAttr(r.isin || '')}"`} style="${isinSuspect ? 'border:2px solid #e85d5d;background:#fff0f0;' : ''}${(isinSuspect||isinMissing) ? 'padding-right:24px;' : ''}">${isinSearchBtn}</td>
+          <td><input value="${escapeAttr(r.isin || '')}" data-field="isin" ${isinTitle || `title="${escapeAttr(r.isin || '')}"`} style="${isinSuspect ? 'border:2px solid #e85d5d;background:#fff0f0;' : ''}"></td>
           <td><input value="${escapeAttr(r.nom || '')}" data-field="nom" title="${escapeAttr(r.nom || '')}"></td>
           <td><input value="${r.qty || ''}" data-field="qty" inputmode="decimal" class="${pdfUncertainClass}" ${pdfUncertainTitle || `title="${escapeAttr(String(r.qty || ''))}"`}></td>
           <td><input value="${r.pru || ''}" data-field="pru" inputmode="decimal" class="${pdfUncertainClass}" ${pdfUncertainTitle || `title="${escapeAttr(String(r.pru || ''))}"`}></td>
@@ -2477,73 +2465,6 @@
       }
       const dist = matrix[a.length][b.length];
       return 1 - dist / Math.max(a.length, b.length);
-    }
-
-    async function searchIsinByName(btnEl) {
-      const td = btnEl.closest('td');
-      const isinInput = td.querySelector('input[data-field="isin"]');
-      const tr = btnEl.closest('tr');
-      const nomInput = tr.querySelector('input[data-field="nom"]');
-      const nomOriginal = (nomInput?.value || '').trim();
-
-      if (!nomOriginal) {
-        alert('Le nom du support est vide — impossible de rechercher l\'ISIN.');
-        return;
-      }
-
-      const originalIcon = btnEl.innerHTML;
-      btnEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
-      btnEl.disabled = true;
-
-      try {
-        // 1. Vérifier le cache communautaire (corrections déjà apprises)
-        let nomPourRecherche = cleanNameForSearch(nomOriginal);
-        try {
-          const cacheParams = new URLSearchParams({ action: 'nameCache', nom: nomOriginal });
-          const cacheRes = await fetch(`${GAS_ISIN_URL}?${cacheParams}`);
-          const cacheData = await cacheRes.json();
-          if (cacheData.cachedName) nomPourRecherche = cacheData.cachedName; // nom déjà corrigé par la communauté
-        } catch(e) { /* cache indisponible, on continue avec le nettoyage léger */ }
-
-        // 2. OpenFIGI avec le meilleur nom disponible
-        const params = new URLSearchParams({ action: 'isin', nom: nomPourRecherche });
-        const res = await fetch(`${GAS_ISIN_URL}?${params}`);
-        const data = await res.json();
-
-        // 3. Vérifier la cohérence : le nom officiel doit ressembler au nom extrait
-        if (data.found && data.name) {
-          const score = similarityScore(nomPourRecherche, data.name);
-          if (score < 0.35) {
-            data.found = false; // trop différent, probable faux positif
-          } else {
-            // Bonne correspondance : on enregistre pour apprentissage communautaire
-            submitNameCorrection(nomOriginal, data.name).catch(()=>{});
-          }
-        }
-
-        if (data.found && data.isin) {
-          isinInput.value = data.isin;
-          isinInput.style.border = '2px solid #00d4aa';
-          isinInput.style.background = '#f0fffa';
-          isinInput.title = `Trouvé via OpenFIGI : ${data.name || ''}`;
-          if (data.name && nomInput) {
-            nomInput.value = data.name;
-            nomInput.style.border = '2px solid #00d4aa';
-            nomInput.style.background = '#f0fffa';
-            nomInput.title = `Corrigé via OpenFIGI (nom original : ${nomOriginal})`;
-          }
-          btnEl.remove();
-        } else {
-          btnEl.innerHTML = originalIcon;
-          btnEl.disabled = false;
-          btnEl.title = 'ISIN introuvable sur OpenFIGI — à saisir manuellement';
-          btnEl.style.color = '#e85d5d';
-        }
-      } catch(e) {
-        btnEl.innerHTML = originalIcon;
-        btnEl.disabled = false;
-        btnEl.title = 'Erreur réseau — réessayez';
-      }
     }
 
     // Enregistrer une correspondance nom-corrompu → nom-officiel dans le Sheet
