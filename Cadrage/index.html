@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v176</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v177</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -2032,7 +2032,7 @@
         cropImageEl = lastCroppedSourceImage;
         renderCropStepPills();
         cropStepIndex = 0;
-        cropResults = {};
+        cropResults = {}; _prefetchedIsinCache = {};
         setupCropCanvas(cropImageEl);
         goToCropStep(0);
       } else {
@@ -2916,7 +2916,7 @@
         cropImageEl = cropImages[0];
         renderCropStepPills();
         cropStepIndex = 0;
-        cropResults = {};
+        cropResults = {}; _prefetchedIsinCache = {};
         setupCropCanvas(cropImageEl);
         goToCropStep(0);
       } catch (err) {
@@ -2975,6 +2975,7 @@
     let cropDrag = null;      // { mode: 'move'|'resize-XX', startX, startY, orig: {...} }
     let cropStepIndex = 0;    // index courant dans CROP_STEPS
     let cropResults = {};     // { ident: [...], qty: [...], pru: [...] } — lignes OCR brutes par étape, TOUTES pages confondues (cumulées dans l'ordre, cf. confirmCropStep)
+    let _prefetchedIsinCache = {}; // Résultats ISIN pré-cherchés sur le texte OCR "ident" pur (avant fusion avec qty/pru)
     // Pile parallèle à cropResults : pour chaque étape (même clé), mémorise le nombre de lignes
     // ajoutées par CHAQUE page validée, dans l'ordre — ex: cropResultsPageSizes.qty = [3, 2] si
     // la page 1 a ajouté 3 lignes et la page 2 en a ajouté 2 à cropResults.qty. Sert uniquement à
@@ -3025,7 +3026,7 @@
         cropImageEl = img;
         renderCropStepPills();
         cropStepIndex = 0;
-        cropResults = {};
+        cropResults = {}; _prefetchedIsinCache = {};
         setupCropCanvas(img);
         goToCropStep(0);
       } catch (err) {
@@ -3385,7 +3386,7 @@
       cropImages = [];
       cropPageIndex = 0;
       cropState = null;
-      cropResults = {};
+      cropResults = {}; _prefetchedIsinCache = {};
       cropResultsPageSizes = {};
       setStatus('', false);
       await terminateCropOcrWorker();
@@ -3471,6 +3472,44 @@
       }
     }
 
+    // ── Pré-recherche ISIN sur le texte OCR "ident" pur ──────────────────────
+    // Cache des résultats indexé par nom nettoyé, consulté plus tard lors de
+    // la construction finale du tableau — évite de refaire la recherche à ce
+    // moment-là et garantit qu'on utilise le texte OCR le plus propre possible
+    // (avant toute fusion avec les colonnes de chiffres qui introduit du bruit).
+
+    async function prefetchIsinForIdentLines(identLines) {
+      if (!identLines?.length) return;
+      const candidates = [];
+      for (const line of identLines) {
+        const isinMatch = line.match(ISIN_RE);
+        if (isinMatch) continue;
+        const cleaned = line.trim();
+        if (cleaned.length < 5 || cleaned.length > 80) continue;
+        if (HEADER_LINE_RE.test(cleaned)) continue;
+        candidates.push(cleaned);
+      }
+      if (!candidates.length) return;
+
+      for (let i = 0; i < candidates.length; i += 20) {
+        const chunk = candidates.slice(i, i + 20);
+        try {
+          const cleanedNoms = chunk.map(cleanNameForSearch);
+          const params = new URLSearchParams({ action: 'isinBatch', noms: JSON.stringify(cleanedNoms) });
+          const res = await fetch(`${GAS_ISIN_URL}?${params}`);
+          const data = await res.json();
+          (data.results || []).forEach((result, idx) => {
+            if (result.found && result.isin) {
+              const score = result.name ? similarityScore(cleanedNoms[idx], result.name) : 1;
+              if (score >= 0.55) {
+                _prefetchedIsinCache[chunk[idx].toLowerCase().trim()] = result.isin;
+              }
+            }
+          });
+        } catch(e) { /* silencieux */ }
+      }
+    }
+
     async function confirmCropStep() {
       if (!cropState) {
         setStatus(ICON_WARN + 'Dessinez d\'abord une zone sur l\'image avant de valider.', false);
@@ -3526,6 +3565,17 @@
         cropResults[step.key].push(...rawLines);
         if (!cropResultsPageSizes[step.key]) cropResultsPageSizes[step.key] = [];
         cropResultsPageSizes[step.key].push(rawLines.length);
+
+        // Dès que l'étape "ident" (Nom + ISIN) est complétée pour toutes les pages,
+        // on lance immédiatement la recherche des ISIN manquants sur ce texte OCR
+        // encore pur (juste des noms, sans le bruit des colonnes de chiffres) —
+        // bien plus fiable qu'une recherche après fusion avec qty/pru. Le résultat
+        // est mémorisé et réutilisé silencieusement à la construction du tableau final.
+        const isLastPageForStep = cropPageIndex >= cropImages.length - 1;
+        if (step.key === 'ident' && isLastPageForStep) {
+          prefetchIsinForIdentLines(cropResults.ident).catch(()=>{});
+        }
+
         advanceCropPageOrStep();
       } catch (err) {
         console.error(err);
@@ -3802,7 +3852,7 @@
         cropImages = [];
         cropPageIndex = 0;
         cropState = null;
-        cropResults = {};
+        cropResults = {}; _prefetchedIsinCache = {};
         cropResultsPageSizes = {};
         await terminateCropOcrWorker();
       }
@@ -3891,13 +3941,27 @@
 
         const corrected = correctNameAgainstKnown(support);
         const usedCorrection = corrected && corrected !== support;
+        let finalSupport = usedCorrection ? corrected : support;
+
+        // Si aucun ISIN n'est présent dans le texte, vérifier le cache pré-rempli
+        // lors de l'étape de cadrage "ident" (recherche faite sur texte OCR pur,
+        // avant fusion avec les colonnes de chiffres — plus fiable).
+        if (!ISIN_RE.test(finalSupport)) {
+          const cleanedKey = cleanNameForSearch(finalSupport).toLowerCase().trim();
+          const prefetchedIsin = _prefetchedIsinCache[cleanedKey]
+            || _prefetchedIsinCache[finalSupport.toLowerCase().trim()];
+          if (prefetchedIsin) {
+            finalSupport = `${prefetchedIsin} ${finalSupport}`;
+          }
+        }
+
         const qtySuspectMissingDecimal = qtyValid && !fillEuroFundFromMontant && looksLikeMissingDecimal(qtyRaw);
         // Hors-périmètre seulement en mode PEA/CTO : en AV/PER, un Fonds Euro correctement rempli
         // (montant cadré présent) est une ligne normale de l'export, pas une exception à part.
         const isEuroFundOutOfScope = isEuroFund && accountMode !== 'av_per';
 
         rows.push({
-          support: usedCorrection ? corrected : support,
+          support: finalSupport,
           qty: qtyValid ? qty : '',
           pru: pruValid ? pru : '',
           _uncertain: !isEuroFundOutOfScope && (!qtyValid || !pruValid || qtySuspectMissingDecimal),
