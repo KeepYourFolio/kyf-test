@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v178</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v179</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -3899,6 +3899,34 @@
       // JAMAIS la valeur : seulement un encadré visuel pour inviter à vérifier contre l'image
       // source, comme pour les autres champs incertains.
       const looksLikeMissingDecimal = (raw) => /^\d{6,}$/.test(raw); // raw = chaîne brute matchée par SINGLE_VALUE_RE, avant parseNum
+
+      // Correction automatique d'une virgule totalement absente : l'OCR peut "avaler"
+      // le séparateur décimal sur une zone de cadrage dense (beaucoup de chiffres serrés).
+      // On déduit la position probable de la virgule à partir du nombre de décimales
+      // typique observé sur les AUTRES quantités correctement lues du même document
+      // (fonds du même relevé, format généralement homogène). Si aucune référence fiable
+      // n'est disponible, on n'invente rien : la valeur reste signalée comme suspecte
+      // sans correction automatique, la validation humaine reste nécessaire.
+      function guessDecimalPlaces(allQtyRaws) {
+        const counts = {};
+        for (const raw of allQtyRaws) {
+          if (!raw || looksLikeMissingDecimal(raw)) continue;
+          const m = raw.match(/[.,](\d+)$/);
+          if (m) counts[m[1].length] = (counts[m[1].length] || 0) + 1;
+        }
+        let best = null, bestCount = 0;
+        for (const [places, count] of Object.entries(counts)) {
+          if (count > bestCount) { bestCount = count; best = parseInt(places); }
+        }
+        return bestCount >= 2 ? best : null; // exige au moins 2 références concordantes
+      }
+      function fixMissingDecimal(raw, decimalPlaces) {
+        if (!decimalPlaces || raw.length <= decimalPlaces) return null;
+        const intPart = raw.slice(0, raw.length - decimalPlaces);
+        const decPart = raw.slice(raw.length - decimalPlaces);
+        return `${intPart}.${decPart}`;
+      }
+      const _guessedQtyDecimalPlaces = guessDecimalPlaces(qtyVals);
       let euroFundMontantCursor = 0; // index dans montantVals, avance à chaque Fonds Euro rencontré (ordre d'apparition)
       for (let i = 0; i < count; i++) {
         const supportLine = supportLines[i] || '';
@@ -3924,9 +3952,12 @@
         const fillEuroFundFromMontant = isEuroFund && accountMode === 'av_per';
         const montantRaw = fillEuroFundFromMontant ? montantVals[euroFundMontantCursor++] : undefined;
 
+        const qtyRawFixed = (qtyRaw !== undefined && looksLikeMissingDecimal(qtyRaw))
+          ? (fixMissingDecimal(qtyRaw, _guessedQtyDecimalPlaces) || qtyRaw)
+          : qtyRaw;
         const qty = fillEuroFundFromMontant
           ? (montantRaw !== undefined ? parseNum(montantRaw) : undefined)
-          : (qtyRaw !== undefined ? parseNum(qtyRaw) : undefined);
+          : (qtyRawFixed !== undefined ? parseNum(qtyRawFixed) : undefined);
         const pru = fillEuroFundFromMontant ? 1 : (pruRaw !== undefined ? parseNum(pruRaw) : undefined);
         // Une valeur manquante (OCR n'a rien trouvé sur cette ligne précise dans son cadre) ou
         // non numérique est explicitement signalée plutôt que de faire disparaître la ligne ou
@@ -3955,7 +3986,8 @@
           }
         }
 
-        const qtySuspectMissingDecimal = qtyValid && !fillEuroFundFromMontant && looksLikeMissingDecimal(qtyRaw);
+        const qtyWasAutoFixed = qtyRaw !== undefined && looksLikeMissingDecimal(qtyRaw) && fixMissingDecimal(qtyRaw, _guessedQtyDecimalPlaces) !== null;
+        const qtySuspectMissingDecimal = qtyValid && !fillEuroFundFromMontant && looksLikeMissingDecimal(qtyRaw) && !qtyWasAutoFixed;
         // Hors-périmètre seulement en mode PEA/CTO : en AV/PER, un Fonds Euro correctement rempli
         // (montant cadré présent) est une ligne normale de l'export, pas une exception à part.
         const isEuroFundOutOfScope = isEuroFund && accountMode !== 'av_per';
@@ -3968,6 +4000,7 @@
           _singleValue: qtyValid !== pruValid, // une seule des deux valeurs est exploitable (probable Fonds Euro ou ligne mal lue dans un seul cadre)
           _corrected: usedCorrection,
           _qtySuspectMissingDecimal: qtySuspectMissingDecimal,
+          _qtyWasAutoFixed: qtyWasAutoFixed,
           _isEuroFund: isEuroFundOutOfScope,
         });
       }
