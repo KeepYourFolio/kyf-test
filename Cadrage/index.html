@@ -2463,6 +2463,7 @@
       const fixed = fixBoursoPerType3(nom);
       return fixed
         .replace(/\b(UCITS|ETF|ETC|ACC|DIST|EUR|USD|GBP|CHF|CLASS|PART|FUND)\b/gi, '')
+        .replace(/\(\s*\)/g, '') // parenthèses vides résiduelles
         .replace(/[-_]+/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
