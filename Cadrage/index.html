@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v174</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v175</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -2545,16 +2545,14 @@
             const candidate = chunk[idx];
             if (result.found && result.isin) {
               const score = result.name ? similarityScore(noms[idx], result.name) : 1;
-              if (score >= 0.35) {
+              if (score >= 0.55) {
+                // On ne touche JAMAIS au nom : c'est celui du relevé, l'utilisateur
+                // lui fait confiance. Seul l'ISIN est complété automatiquement.
                 candidate.isinInput.value = result.isin;
                 candidate.isinInput.style.border = '2px solid #00d4aa';
                 candidate.isinInput.style.background = '#f0fffa';
-                candidate.isinInput.title = `Trouvé via ${result.source || 'internet'} : ${result.name || ''}`;
+                candidate.isinInput.title = `Trouvé via ${result.source || 'internet'} : ${result.name || ''} (score ${Math.round(score*100)}%)`;
                 if (result.name) {
-                  candidate.nomInput.value = result.name;
-                  candidate.nomInput.style.border = '2px solid #00d4aa';
-                  candidate.nomInput.style.background = '#f0fffa';
-                  candidate.nomInput.title = `Corrigé (nom original : ${candidate.nom})`;
                   submitNameCorrection(candidate.nom, result.name).catch(()=>{});
                 }
                 found++;
