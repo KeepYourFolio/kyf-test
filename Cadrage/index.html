@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v183</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v184</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -3958,21 +3958,32 @@
         const fillEuroFundFromMontant = isEuroFund && accountMode === 'av_per';
         const montantRaw = fillEuroFundFromMontant ? montantVals[euroFundMontantCursor++] : undefined;
 
-        // ── TEST PASSIF : validation mathématique Qty × PRU ≈ Montant ──────────
-        // Phase de test uniquement : on calcule et on log dans la console, sans
-        // rien afficher ni corriger automatiquement. Objectif : vérifier que le
-        // calcul est juste sur des données réelles avant de l'activer pour de vrai.
-        if (!fillEuroFundFromMontant && montantVals[i] !== undefined) {
-          const qRaw = parseNum(qtyRaw || '');
-          const pRaw = parseNum(pruRaw || '');
-          const mRaw = parseNum(montantVals[i]);
-          if (!isNaN(qRaw) && !isNaN(pRaw) && !isNaN(mRaw)) {
-            const computed = qRaw * pRaw;
-            const diff = Math.abs(computed - mRaw);
-            const pctDiff = mRaw !== 0 ? (diff / mRaw * 100) : 0;
-            console.log(`[VALIDATION] ${support.slice(0,30)} | qty=${qRaw} pru=${pRaw} montant=${mRaw} | calculé=${computed.toFixed(2)} | écart=${pctDiff.toFixed(1)}%`);
+        // ── Correction automatique : PRU implausible (virgule manquante) ────────
+        // Règle simple et sûre : un PRU (prix d'une part de fonds/action/ETF) au-delà
+        // d'un certain seuil est structurellement impossible en pratique — la quasi
+        // totalité des supports cotent entre quelques euros et quelques milliers
+        // d'euros par part. Un PRU à 6+ chiffres sans virgule (ex: 139100, 1461116)
+        // est presque toujours une virgule manquante à l'OCR, pas une vraie valeur.
+        // On tente de la replacer pour retomber sous le seuil de plausibilité, en
+        // choisissant l'unique position qui donne un résultat raisonnable — si
+        // plusieurs positions sont plausibles à la fois, on ne corrige rien (trop
+        // ambigu) et on laisse le signalement visuel existant faire son travail.
+        const PRU_PLAUSIBLE_MAX = 50000;
+        function fixImplausiblePru(raw) {
+          const asNum = parseNum(raw);
+          if (isNaN(asNum) || asNum <= PRU_PLAUSIBLE_MAX) return null; // déjà plausible, rien à faire
+          const digitsOnly = raw.replace(/[.,\s]/g, '');
+          if (!/^\d{5,}$/.test(digitsOnly)) return null; // pas assez de chiffres pour tenter
+          const candidates = [];
+          for (let pos = 1; pos < digitsOnly.length; pos++) {
+            const test = parseFloat(digitsOnly.slice(0, pos) + '.' + digitsOnly.slice(pos));
+            if (!isNaN(test) && test > 0 && test <= PRU_PLAUSIBLE_MAX) candidates.push(test);
           }
+          // Une seule position plausible : on peut corriger avec confiance.
+          // Plusieurs positions plausibles : trop ambigu, on ne devine pas.
+          return candidates.length === 1 ? candidates[0] : null;
         }
+
 
 
         // Correction automatique de virgule manquante désactivée : risque de produire
@@ -3984,7 +3995,10 @@
         const qty = fillEuroFundFromMontant
           ? (montantRaw !== undefined ? parseNum(montantRaw) : undefined)
           : (qtyRawFixed !== undefined ? parseNum(qtyRawFixed) : undefined);
-        const pru = fillEuroFundFromMontant ? 1 : (pruRaw !== undefined ? parseNum(pruRaw) : undefined);
+        const pruFixedValue = (!fillEuroFundFromMontant && pruRaw !== undefined) ? fixImplausiblePru(pruRaw) : null;
+        const pru = fillEuroFundFromMontant ? 1
+          : (pruFixedValue !== null ? pruFixedValue
+            : (pruRaw !== undefined ? parseNum(pruRaw) : undefined));
         // Une valeur manquante (OCR n'a rien trouvé sur cette ligne précise dans son cadre) ou
         // non numérique est explicitement signalée plutôt que de faire disparaître la ligne ou
         // de deviner une valeur de remplacement — la validation humaine complète si besoin.
@@ -4027,6 +4041,7 @@
           _corrected: usedCorrection,
           _qtySuspectMissingDecimal: qtySuspectMissingDecimal,
           _qtyWasAutoFixed: qtyWasAutoFixed,
+          _pruWasAutoFixed: pruFixedValue !== null,
           _isEuroFund: isEuroFundOutOfScope,
         });
       }
