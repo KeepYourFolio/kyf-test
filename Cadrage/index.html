@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v173</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v174</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -3723,6 +3723,46 @@
       }, { passive: true });
     }
     initFieldTooltips();
+
+    // ── Apprentissage automatique du dictionnaire d'alias ─────────────────────
+    // Quand l'utilisateur corrige manuellement un ISIN (saisie ou collage) et
+    // qu'un nom est présent sur la même ligne, on enregistre automatiquement
+    // cette correspondance dans le dictionnaire communautaire KYF. Les prochains
+    // utilisateurs avec le même nom corrompu bénéficieront directement de la
+    // correction, sans repasser par OpenFIGI/Yahoo (données publiques
+    // uniquement : nom du support + ISIN, jamais de montant ni d'info perso).
+    function initAliasLearning() {
+      const table = document.getElementById('previewTable');
+      if (!table) return;
+      const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
+      const lastKnownIsin = new WeakMap(); // évite de renvoyer si rien n'a changé
+
+      table.addEventListener('focus', (e) => {
+        if (e.target?.matches('input[data-field="isin"]')) {
+          lastKnownIsin.set(e.target, e.target.value.trim());
+        }
+      }, true);
+
+      table.addEventListener('blur', (e) => {
+        if (!e.target?.matches('input[data-field="isin"]')) return;
+        const isin = e.target.value.trim().toUpperCase();
+        const before = lastKnownIsin.get(e.target) || '';
+        if (isin === before) return; // pas de modification réelle
+        if (!ISIN_RE.test(isin)) return; // pas un ISIN valide, on ignore
+
+        const tr = e.target.closest('tr');
+        const nomInput = tr?.querySelector('input[data-field="nom"]');
+        const nom = (nomInput?.value || '').trim();
+        if (!nom || nom.length < 3) return;
+
+        // Enregistrement silencieux, ne bloque jamais l'UI
+        try {
+          const params = new URLSearchParams({ action: 'nameCorrection', nomOriginal: nom, nomOfficiel: nomInput.title || nom, isin });
+          fetch(`${GAS_ISIN_URL}?${params}`).catch(()=>{});
+        } catch(e) {}
+      }, true);
+    }
+    initAliasLearning();
 
     async function finishMultiCrop() {
       cropBlock.style.display = 'none';
