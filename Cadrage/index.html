@@ -1098,7 +1098,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v179</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v180</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -3952,9 +3952,12 @@
         const fillEuroFundFromMontant = isEuroFund && accountMode === 'av_per';
         const montantRaw = fillEuroFundFromMontant ? montantVals[euroFundMontantCursor++] : undefined;
 
-        const qtyRawFixed = (qtyRaw !== undefined && looksLikeMissingDecimal(qtyRaw))
-          ? (fixMissingDecimal(qtyRaw, _guessedQtyDecimalPlaces) || qtyRaw)
-          : qtyRaw;
+        // Correction automatique de virgule manquante désactivée : risque de produire
+        // des valeurs fausses mais plausibles si l'alignement ligne-à-ligne entre les
+        // cadres Nom/Qty/PRU est lui-même imparfait (cas observé). On revient au simple
+        // signalement visuel — la validation humaine reste plus sûre qu'une déduction
+        // statistique dans ce contexte.
+        const qtyRawFixed = qtyRaw;
         const qty = fillEuroFundFromMontant
           ? (montantRaw !== undefined ? parseNum(montantRaw) : undefined)
           : (qtyRawFixed !== undefined ? parseNum(qtyRawFixed) : undefined);
@@ -3986,8 +3989,8 @@
           }
         }
 
-        const qtyWasAutoFixed = qtyRaw !== undefined && looksLikeMissingDecimal(qtyRaw) && fixMissingDecimal(qtyRaw, _guessedQtyDecimalPlaces) !== null;
-        const qtySuspectMissingDecimal = qtyValid && !fillEuroFundFromMontant && looksLikeMissingDecimal(qtyRaw) && !qtyWasAutoFixed;
+        const qtyWasAutoFixed = false;
+        const qtySuspectMissingDecimal = qtyValid && !fillEuroFundFromMontant && looksLikeMissingDecimal(qtyRaw);
         // Hors-périmètre seulement en mode PEA/CTO : en AV/PER, un Fonds Euro correctement rempli
         // (montant cadré présent) est une ligne normale de l'export, pas une exception à part.
         const isEuroFundOutOfScope = isEuroFund && accountMode !== 'av_per';
