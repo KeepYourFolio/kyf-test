@@ -1112,7 +1112,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v188</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v192</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -1412,9 +1412,9 @@
     <div class="status-line" id="statusLine" style="display:none"></div>
 
     <div id="noLinesFoundBlock" class="empty-warning" style="display:none; margin-top:24px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="var(--accent)" stroke="none"/></svg> <strong>Aucune ligne n'a pu être détectée automatiquement. Certains relevés (notamment
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="var(--accent)" stroke="none"/></svg> <strong><span id="noLinesFoundReason">Aucune ligne n'a pu être détectée automatiquement. Certains relevés (notamment
       Boursobank/Oradéa Vie) intègrent une police à encodage propriétaire qui rend le texte
-      illisible par extraction classique. <span id="noLinesFoundCta">Essayez l'OCR ou le cadrage manuel ci-dessus.</span></strong>
+      illisible par extraction classique.</span> <span id="noLinesFoundCta">Essayez l'OCR ou le cadrage manuel ci-dessus.</span></strong>
       <div style="margin-top:10px;">
         <button class="btn btn-secondary" onclick="startManualEntry()" style="font-size:12px;padding:8px 16px"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="M15 5l4 4"/></svg> <strong>Saisir manuellement</strong></button>
       </div>
@@ -1570,6 +1570,7 @@
 
     let extractedRows = [];
     let lastPdfBuffer = null; // conservé pour permettre un nouvel essai en mode OCR
+    let isImageSourceFile = false; // true si le fichier déposé est directement une image (.jpg/.png), pas un PDF
 
     // Mode de compte choisi par la personne avant de démarrer un cadrage manuel — conditionne le
     // nombre d'étapes de cadrage proposées (3 pour PEA/CTO, 4 pour AV/PER avec la zone "Montant
@@ -1696,6 +1697,7 @@
       const lower = file.name.toLowerCase();
       const isPdf = lower.endsWith('.pdf');
       const isImage = lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg');
+      isImageSourceFile = isImage;
       if (!isPdf && !isImage) {
         setStatus(ICON_WARN + 'Veuillez déposer un fichier .pdf, .png, .jpg ou .jpeg', false);
         return;
@@ -2335,7 +2337,18 @@
         } else {
           resultWithSource.style.display = 'none';
         }
-        if (noLinesEl) noLinesEl.style.display = 'block';
+        if (noLinesEl) {
+          noLinesEl.style.display = 'block';
+          // Message contextuel : une image déposée directement ne peut jamais avoir de
+          // "police propriétaire" (c'est un problème spécifique aux PDF texte comme Boursobank
+          // Type3) — on adapte le texte pour ne pas induire l'utilisateur en erreur.
+          const reasonEl = document.getElementById('noLinesFoundReason');
+          if (reasonEl) {
+            reasonEl.textContent = isImageSourceFile
+              ? "Aucune ligne n'a pu être détectée automatiquement sur cette image."
+              : "Aucune ligne n'a pu être détectée automatiquement. Certains relevés (notamment Boursobank/Oradéa Vie) intègrent une police à encodage propriétaire qui rend le texte illisible par extraction classique.";
+          }
+        }
         renderValidatedDocsPanel();
         return;
       }
@@ -3003,16 +3016,15 @@
       const identShortLabel = accountMode === 'crypto' ? 'NOM / TICKER uniquement' : 'NOM + ISIN uniquement';
       const steps = [
         { key: 'ident', label: identLabel, shortLabel: identShortLabel, skippable: false },
-        { key: 'qty', label: 'Quantité', shortLabel: 'QUANTITÉ uniquement', skippable: false },
+        { key: 'qty', label: 'Quantité', shortLabel: 'QUANTITÉ uniquement', skippable: true },
         { key: 'pru', label: 'PRU', shortLabel: 'PRU uniquement', skippable: true },
       ];
-      // Étape "Montant" optionnelle pour tous les modes (pas seulement AV/PER) : sert de
-      // référence pour valider automatiquement Qty × PRU ≈ Montant et corriger les erreurs
-      // OCR de séparateur décimal manquant. Toujours "skippable" : l'utilisateur peut
-      // l'ignorer si son relevé n'affiche pas cette colonne, sans que ça bloque le reste.
-      if (accountMode !== 'crypto') {
-        const montantLabel = accountMode === 'av_per' ? 'Montant atteint' : 'Montant / Valorisation';
-        steps.push({ key: 'montant', label: montantLabel, shortLabel: 'MONTANT (optionnel — aide à valider les calculs)', skippable: true });
+      // Étape "Montant atteint" : exclusive au mode Assurance Vie / PER, sert à indiquer la
+      // valeur du Fonds Euro pour les lignes où Quantité et PRU n'ont pas de sens (le Fonds
+      // Euro n'a ni parts ni cours). Sans objet pour PEA/CTO, crypto ou métaux, qui ont toujours
+      // une vraie quantité et un vrai PRU par ligne.
+      if (accountMode === 'av_per') {
+        steps.push({ key: 'montant', label: 'Montant atteint', shortLabel: 'MONTANT ATTEINT (Fonds Euro)', skippable: true });
       }
       return steps;
     }
@@ -3131,7 +3143,7 @@
       // Le sélecteur de décimales n'a de sens que pour les étapes numériques (qty/pru) :
       // pour "ident" ou "montant", ça n'apporte rien et prêterait à confusion.
       const decimalsSelector = document.getElementById('cropDecimalsSelector');
-      const showDecimalsSelector = step.key === 'qty' || step.key === 'pru';
+      const showDecimalsSelector = step.key === 'qty' || step.key === 'pru' || step.key === 'montant';
       decimalsSelector.style.display = showDecimalsSelector ? 'block' : 'none';
       if (showDecimalsSelector) {
         const currentChoice = cropDecimalsChoice[step.key] || 0;
