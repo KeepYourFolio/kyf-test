@@ -789,6 +789,20 @@
     font-weight: 700; font-size: 12px;
   }
   .crop-banner-icon { font-size: 18px; flex-shrink: 0; }
+  .decimals-choice-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 700;
+    padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: rgba(var(--white-rgb),0.06);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .12s;
+  }
+  .decimals-choice-btn:hover { background: rgba(var(--white-rgb),0.12); }
+  .decimals-choice-btn.active {
+    background: var(--accent); color: #000; border-color: var(--accent);
+  }
   .crop-banner-warning {
     font-size: 12px; font-weight: 700; color: #ff6b81;
     background: linear-gradient(135deg, rgba(244,63,94,0.12) 0%, rgba(var(--white-rgb),0.02) 100%);
@@ -1098,7 +1112,7 @@
       <div style="display:flex;align-items:baseline;gap:0px">
         <span class="kyf-keep">Keep</span><span class="kyf-dot"></span><span class="kyf-your">Your</span><span class="kyf-dot"></span><span class="kyf-folio">Folio</span><span class="kyf-beta-badge">Bêta</span>
       </div>
-      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v184</span></div>
+      <div class="kyf-tag">Convertisseur Relevé de Portefeuille → CSV <span class="kyf-version">· v188</span></div>
       <div style="margin-top:2px">
         <div style="display:flex;gap:2px;width:48px">
           <div style="flex:1;height:2px;background:#0015FF;border-radius:1px"></div>
@@ -1174,6 +1188,17 @@
       <div class="dropzone-title">Cliquez ou déposez votre PDF ou capture d'écran ici</div>
       <div class="dropzone-filename" id="dropzoneFilename" style="display:none;"></div>
       <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg">
+    </div>
+
+    <div id="scannedPdfWarning" style="display:none; margin-top:12px; padding:12px 14px; border:1px solid rgba(240,180,41,0.4); background:linear-gradient(135deg, rgba(240,180,41,0.10) 0%, rgba(var(--white-rgb),0.02) 100%); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-radius:14px; font-size:12px; color:var(--text); line-height:1.7;">
+      <strong><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="var(--accent)" stroke="none"/></svg>
+      Ce document semble être une image scannée (pas de texte natif détecté).</strong>
+      La lecture automatique (OCR) sur ce type de fichier a une précision limitée, en particulier
+      sur les nombres. Vérifiez toujours les valeurs Quantité/PRU contre le document source avant
+      export. Si votre courtier propose un vrai PDF téléchargeable (avec texte sélectionnable),
+      essayez plutôt le
+      <a href="https://keepyourfolio.github.io/kyf-test/Convertisseur/" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700; text-decoration:underline;">Convertisseur automatique</a>
+      — il sera lu avec une précision bien supérieure, sans OCR.
     </div>
 
     <div class="compact-file-bar" id="compactFileBar" style="display:none;" onclick="document.getElementById('fileInput').click()">
@@ -1273,6 +1298,20 @@
           <div class="crop-banner">
             <span class="crop-banner-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l5.5 16.5 2-6.5 6.5-2z" stroke-linejoin="round"/></svg></span>
             <span id="cropBannerText">Étape 1/2 — cadrez NOM + ISIN uniquement</span>
+          </div>
+
+          <div id="cropDecimalsSelector" style="display:none; margin-bottom:12px; padding:10px 12px; background:rgba(var(--accent-rgb, 0,150,255),0.08); border:1px solid var(--accent); border-radius:10px;">
+            <label style="font-size:11px; color:var(--text); display:block; margin-bottom:6px; font-weight:600;">
+              Nombre de chiffres après la virgule sur cette colonne (aide à corriger l'OCR) :
+            </label>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button type="button" class="decimals-choice-btn" data-decimals="0" onclick="setCropDecimals(0, this)">Auto</button>
+              <button type="button" class="decimals-choice-btn" data-decimals="2" onclick="setCropDecimals(2, this)">2</button>
+              <button type="button" class="decimals-choice-btn" data-decimals="3" onclick="setCropDecimals(3, this)">3</button>
+              <button type="button" class="decimals-choice-btn" data-decimals="4" onclick="setCropDecimals(4, this)">4</button>
+              <button type="button" class="decimals-choice-btn" data-decimals="5" onclick="setCropDecimals(5, this)">5</button>
+              <button type="button" class="decimals-choice-btn" data-decimals="6" onclick="setCropDecimals(6, this)">6</button>
+            </div>
           </div>
 
           <div class="crop-banner-warning">
@@ -1667,6 +1706,8 @@
       // superposition visuelle confuse des deux flux.
       cancelCrop();
       cancelPdfNav();
+      const scanWarningResetEl = document.getElementById('scannedPdfWarning');
+      if (scanWarningResetEl) scanWarningResetEl.style.display = 'none';
       const filenameEl = document.getElementById('dropzoneFilename');
       if (filenameEl) { filenameEl.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>' + escapeAttr(file.name); filenameEl.style.display = 'inline-block'; }
       const sourceImageBlockEl = document.getElementById('sourceImageBlock');
@@ -1688,6 +1729,17 @@
         clearManualCropHighlight();
         const text = await extractPdfText(lastPdfBuffer.slice(0));
         setStatus('Analyse du relevé…', true);
+
+        // Détection simple : un PDF avec très peu de texte natif extractible malgré sa taille
+        // est presque toujours un scan/image encapsulée, pas un vrai PDF texte. Dans ce cas,
+        // l'OCR (via cadrage manuel ou bouton OCR plein document) sera nécessaire et ses limites
+        // de précision s'appliqueront — on prévient clairement l'utilisateur avant qu'il investisse
+        // du temps dans un cadrage, plutôt que de le laisser découvrir la limite après coup.
+        const isLikelyScannedPdf = (text || '').trim().length < 50;
+        if (isLikelyScannedPdf) {
+          const scanWarningEl = document.getElementById('scannedPdfWarning');
+          if (scanWarningEl) scanWarningEl.style.display = 'block';
+        }
 
         // Essai prioritaire : police Type3 à bitmap (Boursobank / Oradéa Vie, PER/AV).
         // Signal de détection sans ambiguïté avec les autres formats (présence de CharProcs Type3).
@@ -2981,6 +3033,22 @@
     let cropStepIndex = 0;    // index courant dans CROP_STEPS
     let cropResults = {};     // { ident: [...], qty: [...], pru: [...] } — lignes OCR brutes par étape, TOUTES pages confondues (cumulées dans l'ordre, cf. confirmCropStep)
     let _prefetchedIsinCache = {}; // Résultats ISIN pré-cherchés sur le texte OCR "ident" pur (avant fusion avec qty/pru)
+    // Nombre de décimales choisi manuellement par l'utilisateur pour chaque étape numérique
+    // (qty/pru) : { qty: 5, pru: 2 } par exemple. 0 ou absent = pas de correction forcée,
+    // le texte OCR brut est utilisé tel quel (comportement historique). Contourne complètement
+    // le problème d'ambiguïté de la correction automatique par calcul mathématique : l'utilisateur
+    // connaît la réponse en un coup d'œil sur son propre document, pas besoin de deviner.
+    let cropDecimalsChoice = {};
+
+    function setCropDecimals(n, btnEl) {
+      const step = CROP_STEPS[cropStepIndex];
+      if (!step) return;
+      cropDecimalsChoice[step.key] = n; // 0 = Auto (pas de correction)
+      const container = btnEl.closest('#cropDecimalsSelector');
+      container.querySelectorAll('.decimals-choice-btn').forEach(b => b.classList.remove('active'));
+      btnEl.classList.add('active');
+    }
+
     // Pile parallèle à cropResults : pour chaque étape (même clé), mémorise le nombre de lignes
     // ajoutées par CHAQUE page validée, dans l'ordre — ex: cropResultsPageSizes.qty = [3, 2] si
     // la page 1 a ajouté 3 lignes et la page 2 en a ajouté 2 à cropResults.qty. Sert uniquement à
@@ -3007,6 +3075,10 @@
 
     async function handleImageFile(file) {
       hideResultBlocks();
+      // Une image déposée directement (.jpg/.png) est par définition une capture/scan, jamais
+      // du texte natif — l'avertissement OCR s'applique systématiquement, pas besoin de détecter.
+      const scanWarningImgEl = document.getElementById('scannedPdfWarning');
+      if (scanWarningImgEl) scanWarningImgEl.style.display = 'block';
       cropBlock.style.display = 'block';
       const loadingBadge = document.getElementById('cropImageLoadingBadge');
       if (loadingBadge) loadingBadge.style.display = 'flex';
@@ -3056,6 +3128,17 @@
       cropBannerText.textContent = shortText;
       cropRectLabel.textContent = step.shortLabel;
       cropSkipBtn.style.display = step.skippable ? 'inline-block' : 'none';
+      // Le sélecteur de décimales n'a de sens que pour les étapes numériques (qty/pru) :
+      // pour "ident" ou "montant", ça n'apporte rien et prêterait à confusion.
+      const decimalsSelector = document.getElementById('cropDecimalsSelector');
+      const showDecimalsSelector = step.key === 'qty' || step.key === 'pru';
+      decimalsSelector.style.display = showDecimalsSelector ? 'block' : 'none';
+      if (showDecimalsSelector) {
+        const currentChoice = cropDecimalsChoice[step.key] || 0;
+        decimalsSelector.querySelectorAll('.decimals-choice-btn').forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.decimals) === currentChoice);
+        });
+      }
       // Pas d'étape avant la première : rien où revenir.
       cropPrevBtn.style.display = idx > 0 ? 'inline-block' : 'none';
       // Le cadre n'est plus créé par défaut : l'utilisateur le dessine lui-même au premier
@@ -3515,6 +3598,23 @@
       }
     }
 
+    // ── Application du nombre de décimales choisi manuellement ────────────────
+    // Prend une ligne OCR brute et force le séparateur décimal à la position
+    // indiquée par l'utilisateur sur CHAQUE nombre détecté dans la ligne (une
+    // ligne peut contenir l'ISIN + un nombre, ou juste un nombre isolé selon
+    // l'étape). Ne touche que les nombres d'au moins (decimals+1) chiffres —
+    // un nombre déjà plus court est laissé tel quel (probablement déjà correct
+    // ou une valeur légitimement entière comme "0" pour une ligne vide).
+    function applyDecimalsChoice(line, decimals) {
+      return line.replace(/\d[\d.,\s]*\d|\d/g, (match) => {
+        const digitsOnly = match.replace(/[.,\s]/g, '');
+        if (digitsOnly.length <= decimals) return match; // trop court, rien à faire
+        const intPart = digitsOnly.slice(0, digitsOnly.length - decimals);
+        const decPart = digitsOnly.slice(digitsOnly.length - decimals);
+        return `${intPart}.${decPart}`;
+      });
+    }
+
     async function confirmCropStep() {
       if (!cropState) {
         setStatus(ICON_WARN + 'Dessinez d\'abord une zone sur l\'image avant de valider.', false);
@@ -3560,6 +3660,15 @@
           return;
         }
 
+        // Appliquer la correction de décimales choisie par l'utilisateur pour cette étape
+        // (qty/pru uniquement) : force le nombre de chiffres après la virgule sur chaque
+        // valeur numérique détectée, en écrasant tout séparateur mal lu par l'OCR. 0/absent
+        // = comportement historique, texte OCR brut inchangé.
+        const chosenDecimals = cropDecimalsChoice[step.key] || 0;
+        const finalRawLines = chosenDecimals > 0
+          ? rawLines.map(line => applyDecimalsChoice(line, chosenDecimals))
+          : rawLines;
+
         // Accumulation par page : cropResults[step.key] est un tableau de TOUTES les lignes
         // brutes OCR pour cette étape, toutes pages confondues, dans l'ordre des pages (page 1
         // d'abord, page 2 ensuite...) — pas une simple assignation qui remplacerait le résultat
@@ -3567,10 +3676,9 @@
         // tableau ne contient qu'un seul "lot" de lignes, donc le comportement final est
         // identique à avant l'ajout du multi-pages.
         if (!cropResults[step.key]) cropResults[step.key] = [];
-        cropResults[step.key].push(...rawLines);
-        console.log(`[DEBUG] step=${step.key} rawLines=`, JSON.stringify(rawLines));
+        cropResults[step.key].push(...finalRawLines);
         if (!cropResultsPageSizes[step.key]) cropResultsPageSizes[step.key] = [];
-        cropResultsPageSizes[step.key].push(rawLines.length);
+        cropResultsPageSizes[step.key].push(finalRawLines.length);
 
         // Dès que l'étape "ident" (Nom + ISIN) est complétée pour toutes les pages,
         // on lance immédiatement la recherche des ISIN manquants sur ce texte OCR
