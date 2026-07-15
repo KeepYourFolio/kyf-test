@@ -242,6 +242,17 @@
   /* Prévisualisation PDF */
   .result-layout { display: grid; grid-template-columns: minmax(0,1fr) 560px; gap: 20px; align-items: start; }
   @media (max-width: 1320px) { .result-layout { grid-template-columns: minmax(0,1fr); } }
+  /* v2.290 — Surlignage des lignes "fournisseur connu" du relevé bancaire : posé en classe
+     plutôt qu'en style inline sur le <tr> (comme c'était le cas avant), pour que les règles
+     mobiles ci-dessous (#bankResultBody tr, display:flex, border-radius, etc.) s'appliquent
+     sans qu'un style inline plus prioritaire ne vienne en écraser une partie (border-left
+     notamment), ce qui provoquait un débordement de cette ligne sur la droite en mobile. */
+  #bankResultBody tr.bank-row-default { border-bottom: 1px solid rgba(255,255,255,0.06); }
+  #bankResultBody tr.bank-row-known {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(240,180,41,0.08);
+    border-left: 2px solid var(--accent);
+  }
   .pdf-preview { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; position: sticky; top: 68px; max-height: calc(100vh - 88px); display: flex; flex-direction: column; }
   .pdf-preview-header { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 10px; color: var(--text3); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   .pdf-nav-btns { display: flex; gap: 6px; align-items: center; }
@@ -356,6 +367,13 @@
   .footer-sep { color: var(--border2); }
 
   /* Responsive mobile */
+  /* Le bouton "Voir plus/moins" du paragraphe explicatif du relevé bancaire n'a de sens que
+     sur mobile (cf. règle .bank-lines-explain-toggle dans @media max-width:640px, plus bas,
+     qui le repasse en inline-block) : sur desktop, le paragraphe complet tient déjà bien dans
+     la largeur disponible, pas besoin de le replier. Cette règle doit rester AVANT la media
+     query dans le fichier pour que la surcharge mobile l'emporte bien (même spécificité CSS
+     des deux sélecteurs → c'est l'ordre d'apparition qui décide).*/
+  .bank-lines-explain-toggle { display: none; }
   @media (max-width: 640px) {
     /* Topbar */
     .topbar { padding: 0 12px; height: 48px; }
@@ -387,6 +405,16 @@
        regroupés sur une seule ligne compacte en bas de carte pour ne pas gonfler la hauteur. */
     .table-wrap { overflow-x: visible; border: none; background: transparent; }
     #resultTable { min-width: 0; width: 100%; border: none; }
+    /* v2.290 — CORRECTIF "ça dépasse à droite sur mobile" : une règle CSS générique plus haut
+       dans le fichier (sélecteur "table", sans id) impose min-width:560px à TOUS les tableaux
+       du site — pensée pour l'affichage desktop classique en colonnes, avant que le mode carte
+       mobile ne prenne le relais. #resultTable (portefeuille) avait déjà ce correctif juste
+       au-dessus (min-width:0), mais #bankResultTable (relevé bancaire) avait été oublié : sur un
+       écran mobile plus étroit que 560px, le tableau forçait toute la page à s'élargir au-delà
+       de l'écran. Le surplus, invisible, se logeait entièrement à droite (la marge gauche reste
+       correcte car ancrée à x=0, alors que la marge droite du contenu se retrouve poussée hors
+       du viewport) — d'où l'impression que "ça dépasse" uniquement sur la droite. */
+    #bankResultTable { min-width: 0; width: 100%; border: none; }
     #resultTable thead { display: none; }
     #resultBody tr { display: flex; flex-wrap: wrap; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; padding: 8px 10px 10px; }
     #resultBody td { border: none; font-size: 12px; }
@@ -417,6 +445,68 @@
     #resultBody tr.collapsed .row-collapse-toggle { transform: rotate(-90deg); }
     #resultBody tr.collapsed { padding-bottom: 8px; }
     #resultBody tr.collapsed td:not([data-label="Nom / Support"]) { display: none; }
+
+    /* Tableau Relevé bancaire — même principe de cartes empilées que le tableau portefeuille
+       ci-dessus (voir #resultBody). Les cellules du tableau bancaire sont générées avec des
+       styles en ligne (padding, text-align, white-space, color) directement dans le template
+       JS de renderBankResult() : ces styles inline ont une priorité plus forte que n'importe
+       quelle règle CSS externe, d'où les !important ci-dessous, nécessaires pour les
+       neutraliser en mode carte mobile (la couleur rouge/verte Débit/Crédit, elle, reste
+       inchangée et n'a pas besoin d'override). Contrairement au tableau portefeuille, l'ordre
+       DOM naturel des colonnes (case à cocher, Date, Libellé, Débit, Crédit) correspond déjà à
+       l'ordre voulu en carte (case+date en tête, libellé en pleine largeur en dessous, montants
+       en bas) : aucune propriété "order" n'est donc nécessaire, seul "flex-basis" par colonne. */
+    #bankResultTable thead { display: none; }
+    #bankResultBody tr {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 10px; padding: 8px 10px 10px !important;
+      width: 100%; max-width: 100%;
+    }
+    /* v2.290 — CORRECTIF "carré qui sort à droite" : sur le tableau portefeuille (#resultBody,
+       qui fonctionne bien), CHAQUE cellule reçoit un display explicite (flex ou block). Ici, les
+       td n'avaient qu'un flex-basis mais aucun display propre : livrés à eux-mêmes, ils restent
+       display:table-cell tant que le navigateur ne les "blockifie" pas correctement comme
+       enfants d'un conteneur flex — ce qui, sur certains navigateurs mobiles, les fait garder
+       l'algorithme de largeur du TABLEAU d'origine (basé sur les largeurs figées du thead :
+       24px/64px/auto/72px/72px) au lieu de la largeur de la carte. Résultat : une cellule
+       (souvent la ligne surlignée, rendue différemment à cause des styles inline dessus)
+       déborde du cadre de la carte sur la droite. Un display explicite sur toutes les cellules
+       supprime cette ambiguïté.
+       Les cellules du tableau bancaire ont aussi des styles en ligne (padding, text-align,
+       white-space, color) posés directement dans le template JS de renderBankResult() : ces
+       styles inline priment sur toute règle CSS externe, d'où les !important ci-dessous. */
+    #bankResultBody td {
+      border: none !important; font-size: 12px; padding: 0 !important;
+      display: block; min-width: 0; max-width: 100%;
+    }
+    #bankResultBody td[data-label=""] { flex: 0 0 auto; display: flex; align-items: center; }
+    #bankResultBody td[data-label=""] input[type="checkbox"] { width: 17px; height: 17px; }
+    #bankResultBody td[data-label="Date"] {
+      flex: 0 0 auto; font-size: 11px !important; color: var(--text3); white-space: nowrap !important;
+      display: flex; align-items: center;
+    }
+    #bankResultBody td[data-label="Libellé"] { flex: 1 1 100%; padding: 6px 0 2px !important; display: block; }
+    #bankResultBody td[data-label="Libellé"] input { font-size: 12px !important; width: 100% !important; max-width: 100%; }
+    #bankResultBody td[data-label="Débit"], #bankResultBody td[data-label="Crédit"] {
+      flex: 0 0 auto; text-align: left !important; white-space: nowrap !important; display: block;
+    }
+    /* v2.290 — CORRECTIF : une ligne n'a jamais à la fois un débit ET un crédit (une seule des
+       deux valeurs existe par mouvement bancaire). Avant, la cellule vide s'affichait quand même
+       avec son étiquette ("DÉBIT" sans valeur), et comme les deux cellules étaient en
+       flex-grow:1, elles se partageaient toute la largeur de la carte → une étiquette vide isolée
+       à gauche et la valeur réelle poussée loin à droite, avec un grand vide au milieu qui alourdit
+       visuellement chaque carte (cf. capture mobile : "ça dépasse"). En masquant la cellule vide
+       (:empty, le td ne contient alors aucun texte) et en repassant flex-grow à 0, seule la
+       valeur réellement présente s'affiche, collée au Libellé au-dessus — plus compact,
+       plus lisible, et ça reste gérable même avec 50 lignes. */
+    #bankResultBody td[data-label="Débit"]:empty, #bankResultBody td[data-label="Crédit"]:empty {
+      display: none;
+    }
+    #bankResultBody td[data-label]:not([data-label=""])::before {
+      content: attr(data-label); font-size: 9px; text-transform: uppercase; letter-spacing: 0.03em;
+      color: var(--text3); margin-right: 4px;
+    }
 
     /* Boutons d'action — plus compacts, 2 par ligne côte à côte */
     .actions { flex-direction: column; gap: 8px; margin-top: 22px; margin-bottom: 22px; }
@@ -458,6 +548,28 @@
     .isin-pdf-panel { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 12px; }
     .isin-pdf-imgwrap { max-height: 40vh; }
     .isin-candidate-option { flex-direction: column; align-items: flex-start; gap: 3px; }
+
+    /* v2.290 — Section "Lignes détectées" (relevé bancaire) pas optimisée mobile :
+       1) l'en-tête (titre + compteur + bouton Exporter CSV) n'avait aucune protection de
+          repli — sur un écran très étroit, titre + "(page X/Y)" + bouton pouvaient se
+          retrouver à l'étroit sur une seule ligne sans échappatoire. flex-wrap laisse le
+          bouton passer sous le titre plutôt que de tout comprimer.
+       2) le paragraphe explicatif ("Toutes les lignes contenant...") fait 5 lignes de texte
+          avant même d'arriver aux résultats — beaucoup d'espace pris par du texte qu'on ne lit
+          qu'une fois. Replié à 2 lignes par défaut sur mobile, avec un lien "Voir plus". */
+    .bank-lines-header { flex-wrap: wrap; row-gap: 8px; }
+    .bank-lines-explain.collapsed {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .bank-lines-explain-toggle {
+      display: inline-block;
+      background: none; border: none; padding: 0; margin-bottom: 10px;
+      color: var(--accent); font-size: 10px; font-weight: 700;
+      text-decoration: underline; cursor: pointer; font-family: inherit;
+    }
   }
 </style>
 </head>
@@ -622,17 +734,18 @@
 
   <!-- Résultat mode Relevé bancaire — séparé du résultat portefeuille -->
   <div id="bankResultSection" style="display:none;margin-top:24px;max-width:1160px;margin-left:auto;margin-right:auto">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div class="bank-lines-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div>
         <span style="font-size:12px;font-weight:700">Lignes détectées — <span id="bankRowCount">0</span></span>
         <span id="bankPageLabel" style="font-size:11px;color:var(--text3);margin-left:6px"></span>
       </div>
       <button type="button" onclick="downloadBankCSV()" style="font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;border:none;background:var(--accent);color:#000;cursor:pointer">Exporter CSV</button>
     </div>
-    <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Toutes les lignes contenant une date et un montant ont été extraites, sans interprétation. Décochez celles à exclure, corrigez le libellé si besoin. <span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:2px;vertical-align:middle;margin-left:4px"></span> = correspond à un fournisseur à facturation récurrente connu (Netflix, EDF, Free, assurances...) — pas les commerces où le montant varie à chaque achat.</div>
+    <div id="bankLinesExplain" class="bank-lines-explain collapsed" style="font-size:10px;color:var(--text3);margin-bottom:4px">Toutes les lignes contenant une date et un montant ont été extraites, sans interprétation. Décochez celles à exclure, corrigez le libellé si besoin. <span style="display:inline-block;width:8px;height:8px;background:var(--accent);border-radius:2px;vertical-align:middle;margin-left:4px"></span> = correspond à un fournisseur à facturation récurrente connu (Netflix, EDF, Free, assurances...) — pas les commerces où le montant varie à chaque achat.</div>
+    <button type="button" id="bankLinesExplainToggle" class="bank-lines-explain-toggle" onclick="const p=document.getElementById('bankLinesExplain'); const collapsed=p.classList.toggle('collapsed'); this.textContent = collapsed ? 'Voir plus' : 'Voir moins';">Voir plus</button>
     <div class="result-layout">
       <div class="table-wrap">
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <table id="bankResultTable" style="width:100%;border-collapse:collapse;font-size:11px">
           <thead><tr style="border-bottom:1px solid var(--border)">
             <th style="width:24px"></th><th style="width:64px;text-align:left;padding:4px 6px 4px 4px">Date</th><th style="text-align:left;padding:4px">Libellé</th><th style="width:72px;text-align:right;padding:4px">Débit</th><th style="width:72px;text-align:right;padding:4px">Crédit</th>
           </tr></thead>
@@ -2576,7 +2689,7 @@
           // — on les recolle sans espace. Un vrai écart garde l'espace.
           if (gap > 0.5) text += ' ';
         }
-        offsets.push({ start: text.length, end: text.length + part.text.length, x: part.x });
+        offsets.push({ start: text.length, end: text.length + part.text.length, x: part.x, width: part.width || 0 });
         text += part.text;
       });
       return { text, offsets, page: l.page };
@@ -2590,17 +2703,45 @@
   function _bankDetectColumns(lineObjs) {
     for (let i = 0; i < lineObjs.length; i++) {
       const l = lineObjs[i];
-      if (!/d[ée]bit/i.test(l.text) || !/cr[ée]dit/i.test(l.text)) continue;
-      const debitOff = l.offsets.find(o => /d[ée]bit/i.test(l.text.slice(o.start, o.end)));
-      const creditOff = l.offsets.find(o => /cr[ée]dit/i.test(l.text.slice(o.start, o.end)));
-      if (debitOff && creditOff) return { debitX: debitOff.x, creditX: creditOff.x, headerIndex: i };
+      const debitM = l.text.match(/d[ée]bit/i);
+      const creditM = l.text.match(/cr[ée]dit/i);
+      if (!debitM || !creditM) continue;
+      // v2.290 — CORRECTIF : le mot "Débit"/"Crédit" peut être réparti sur PLUSIEURS fragments
+      // PDF distincts (fréquent avec les caractères accentués, souvent isolés dans leur propre
+      // fragment par certains générateurs de PDF — cf. commentaire sur "CH"+"È"+"QUE" plus haut).
+      // L'ancien code exigeait qu'UN SEUL fragment contienne le mot entier ; si "Débit" était
+      // scindé en "D" + "é" + "bit", aucun fragment ne matchait seul, la colonne n'était jamais
+      // détectée, et le code retombait sur la détection par signe "-" — inexistant sur un relevé
+      // français — donc TOUT était classé en crédit, y compris de vrais débits (ex: 1,99 €
+      // prélevé, affiché à tort en crédit). On cherche désormais le mot dans le texte de ligne
+      // déjà reconstitué (qui recolle les fragments), puis on prend le bord droit MAXIMUM parmi
+      // tous les fragments qui chevauchent cette portion de texte.
+      const debitX = _bankRightEdgeOfSpan(l, debitM.index, debitM.index + debitM[0].length);
+      const creditX = _bankRightEdgeOfSpan(l, creditM.index, creditM.index + creditM[0].length);
+      if (debitX != null && creditX != null) return { debitX, creditX, headerIndex: i };
     }
     return null;
   }
 
+  // Bord droit (x + largeur) le plus à droite parmi tous les fragments PDF qui chevauchent
+  // la portion [start, end) du texte de ligne reconstitué — utilisé pour retrouver la vraie
+  // position d'un mot même quand il est réparti sur plusieurs fragments distincts.
+  function _bankRightEdgeOfSpan(lineObj, start, end) {
+    let right = null;
+    lineObj.offsets.forEach(o => {
+      if (o.start < end && o.end > start) {
+        const r = o.x + o.width;
+        if (right == null || r > right) right = r;
+      }
+    });
+    return right;
+  }
+
   function _bankXAt(lineObj, index) {
     const off = lineObj.offsets.find(o => index >= o.start && index < o.end);
-    return off ? off.x : null;
+    // Bord droit du fragment (x + largeur) — cohérent avec _bankDetectColumns ci-dessus,
+    // pour comparer des bords droits entre eux plutôt qu'un bord droit à un bord gauche.
+    return off ? off.x + off.width : null;
   }
 
   // Le panneau PDF (zoom, navigation) est un élément unique partagé entre le
@@ -2802,16 +2943,14 @@
     document.getElementById('bankPageLabel').textContent = bankRows.length ? `(page ${bankCurrentPage + 1}/${totalPages})` : '';
     body.innerHTML = pageRows.map((r, localI) => { const i = startIdx + localI;
       const known = _bankMatchesKnown(r.label);
-      const rowStyle = known
-        ? 'border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(240,180,41,0.08);border-left:2px solid var(--accent)'
-        : 'border-bottom:1px solid rgba(255,255,255,0.06)';
+      const rowClass = known ? 'bank-row-known' : 'bank-row-default';
       return `
-      <tr style="${rowStyle}" title="${known ? 'Correspond à une entreprise connue' : ''}">
-        <td style="padding:4px"><input type="checkbox" ${r.checked ? 'checked' : ''} onchange="bankRows[${i}].checked=this.checked"></td>
-        <td style="padding:4px 6px 4px 4px;white-space:nowrap">${r.date}</td>
-        <td style="padding:4px"><input type="text" value="${escHtml(r.label)}" oninput="bankRows[${i}].label=this.value" style="width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text);font-family:inherit;font-size:11px"></td>
-        <td style="padding:4px;text-align:right;white-space:nowrap;font-weight:700;color:var(--red)">${r.debit!=null ? r.debit.toFixed(2)+' €' : ''}</td>
-        <td style="padding:4px;text-align:right;white-space:nowrap;font-weight:700;color:var(--green)">${r.credit!=null ? r.credit.toFixed(2)+' €' : ''}</td>
+      <tr class="${rowClass}" title="${known ? 'Correspond à une entreprise connue' : ''}">
+        <td data-label="" style="padding:4px"><input type="checkbox" ${r.checked ? 'checked' : ''} onchange="bankRows[${i}].checked=this.checked"></td>
+        <td data-label="Date" style="padding:4px 6px 4px 4px;white-space:nowrap">${r.date}</td>
+        <td data-label="Libellé" style="padding:4px"><input type="text" value="${escHtml(r.label)}" oninput="bankRows[${i}].label=this.value" style="width:100%;background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--text);font-family:inherit;font-size:11px"></td>
+        <td data-label="Débit" style="padding:4px;text-align:right;white-space:nowrap;font-weight:700;color:var(--red)">${r.debit!=null ? r.debit.toFixed(2)+' €' : ''}</td>
+        <td data-label="Crédit" style="padding:4px;text-align:right;white-space:nowrap;font-weight:700;color:var(--green)">${r.credit!=null ? r.credit.toFixed(2)+' €' : ''}</td>
       </tr>`; }).join('');
     const pagerRow = document.getElementById('bankPagerRow');
     pagerRow.style.display = totalPages > 1 ? 'flex' : 'none';
