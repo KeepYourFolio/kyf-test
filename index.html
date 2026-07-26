@@ -104,6 +104,12 @@
 }
 
 /* ── VAR JOURNALIÈRE KPI ── */
+@keyframes kyfRechercheReveal {
+  0%   { opacity:0; transform:translateY(6px); letter-spacing:3px; }
+  55%  { opacity:1; }
+  100% { opacity:1; transform:translateY(0); letter-spacing:1px; }
+}
+.kyf-reveal-anim { animation: kyfRechercheReveal .65s cubic-bezier(.22,1,.36,1); }
 @keyframes ioFloat {
   0%,100% { transform: translateY(0); }
   40%     { transform: translateY(-3px); }
@@ -2180,7 +2186,7 @@ select:focus {
   <!-- Recherche -->
   <div style="margin-bottom:14px">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-      <span style="font-size:11px;color:var(--text3);letter-spacing:.5px">RECHERCHE</span>
+      <span id="etfRechercheLabel" class="kyf-reveal-anim" style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1px">RECHERCHE</span>
       <button onclick="toggleETFSearchInfo()" id="etfSearchInfoBtn" title="Comment rechercher ?"
         style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;padding:0;
         border-radius:50%;border:1.5px solid var(--accent);background:rgba(77,159,255,0.12);
@@ -13945,6 +13951,8 @@ function openAddETF(){
   document.getElementById('etfAddModal').style.display      = 'block';
   document.getElementById('etfAddOverlay').style.display    = 'block';
   document.body.style.overflow = 'hidden'; // bloque le scroll de la page derrière
+  const lbl = document.getElementById('etfRechercheLabel');
+  if(lbl){ lbl.classList.remove('kyf-reveal-anim'); void lbl.offsetWidth; lbl.classList.add('kyf-reveal-anim'); }
   setTimeout(()=> document.getElementById('etfSearchInput').focus(), 100);
 }
 
@@ -13975,6 +13983,8 @@ function openEditETF(idx){
   document.getElementById('etfAddModal').style.display   = 'block';
   document.getElementById('etfAddOverlay').style.display = 'block';
   document.body.style.overflow = 'hidden'; // bloque le scroll de la page derrière
+  const lbl2 = document.getElementById('etfRechercheLabel');
+  if(lbl2){ lbl2.classList.remove('kyf-reveal-anim'); void lbl2.offsetWidth; lbl2.classList.add('kyf-reveal-anim'); }
 }
 
 // ── Fermer modal ──────────────────────────────────────────────
