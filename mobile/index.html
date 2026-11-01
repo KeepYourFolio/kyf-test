@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.11", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.12", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -250,31 +250,41 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.11)
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.12)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
 var BIO="kyfm-bio";
 function bioDispo(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&window.isSecureContext)}
 function bioActif(){try{var c=JSON.parse(localStorage.getItem(BIO));return !!(c&&c.id&&c.salt&&c.iv&&c.ct)}catch(e){return false}}
-function bioOff(){try{localStorage.removeItem(BIO)}catch(e){}}
+function bioOff(){try{localStorage.removeItem(BIO)}catch(e){}try{indexedDB.deleteDatabase("kyfm-bio")}catch(e){}}
 async function bioCle(res){var raw=res&&res.prf&&res.prf.results&&res.prf.results.first;if(!raw)throw new Error("noprf");
   var b=await crypto.subtle.importKey("raw",raw,"HKDF",false,["deriveKey"]);
   return crypto.subtle.deriveKey({name:"HKDF",hash:"SHA-256",salt:new Uint8Array(0),info:new TextEncoder().encode("kyf-mobile-bio-v1")},b,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+function idb(){return new Promise(function(ok,ko){var r=indexedDB.open("kyfm-bio",1);r.onupgradeneeded=function(){r.result.createObjectStore("k")};r.onsuccess=function(){ok(r.result)};r.onerror=function(){ko(r.error)}})}
+async function idbPut(v){var d=await idb();return new Promise(function(ok,ko){var t=d.transaction("k","readwrite");t.objectStore("k").put(v,"cle");t.oncomplete=ok;t.onerror=function(){ko(t.error)}})}
+async function idbGet(){var d=await idb();return new Promise(function(ok,ko){var q=d.transaction("k").objectStore("k").get("cle");q.onsuccess=function(){ok(q.result)};q.onerror=function(){ko(q.error)}})}
 async function bioActiver(){
   if(!bioDispo()||!PH)throw new Error("indispo");
   var salt=crypto.getRandomValues(new Uint8Array(32)),chal=crypto.getRandomValues(new Uint8Array(32)),uid=crypto.getRandomValues(new Uint8Array(16));
   var cr=await navigator.credentials.create({publicKey:{rp:{name:"KYF Mobile",id:location.hostname},user:{id:uid,name:"coffre-kyf",displayName:"Coffre KYF"},challenge:chal,
     pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{residentKey:"preferred",userVerification:"required"},timeout:60000,attestation:"none",extensions:{prf:{}}}});
-  var ext=cr.getClientExtensionResults();if(!ext.prf||!ext.prf.enabled)throw new Error("noprf");
-  var id=new Uint8Array(cr.rawId),res=await bioLire(id,salt),key=await bioCle(res),iv=crypto.getRandomValues(new Uint8Array(12));
-  var ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,new TextEncoder().encode(PH)));
-  localStorage.setItem(BIO,JSON.stringify({v:1,id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct)}))}
+  var ext=cr.getClientExtensionResults(),id=new Uint8Array(cr.rawId),iv=crypto.getRandomValues(new Uint8Array(12)),rec=null;
+  if(ext.prf&&ext.prf.enabled){try{var key=await bioCle(await bioLire(id,salt));
+    var ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,new TextEncoder().encode(PH)));
+    rec={v:1,mode:"prf",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct)}}catch(e){if(e&&e.name==="NotAllowedError")throw e}}
+  if(!rec){/* repli : le gestionnaire ne fournit pas de secret propre. L'empreinte (ou le verrou) doit être validée, puis une clé gardée sur l'appareil, non exportable, ouvre la phrase. */
+    var k2=await crypto.subtle.generateKey({name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
+    var ct2=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},k2,new TextEncoder().encode(PH)));
+    await idbPut(k2);rec={v:1,mode:"dev",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct2)}}
+  localStorage.setItem(BIO,JSON.stringify(rec))}
 async function bioLire(id,salt){
   var a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:id}],userVerification:"required",timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
   return a.getClientExtensionResults()}
 async function bioOuvrir(){
-  var c=JSON.parse(localStorage.getItem(BIO)),res=await bioLire(unb64(c.id),unb64(c.salt)),key=await bioCle(res);
+  var c=JSON.parse(localStorage.getItem(BIO)),key;
+  if(c.mode==="dev"){await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:unb64(c.id)}],userVerification:"required",timeout:60000}});key=await idbGet();if(!key)throw new Error("cle")}
+  else key=await bioCle(await bioLire(unb64(c.id),unb64(c.salt)));
   var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(c.iv)},key,unb64(c.ct));
   await ouvrir(new TextDecoder().decode(pt))}
 function bioClic(){S.bioTry=true;msg="";bioOuvrir().then(function(){go("home",{})}).catch(function(e){msg=(e&&e.name==="NotAllowedError")?"Déverrouillage annulé. Utilisez votre phrase secrète ou réessayez.":"Clé d’accès indisponible. Utilisez votre phrase secrète.";msgOk=false;render()})}
