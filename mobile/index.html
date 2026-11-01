@@ -14,12 +14,14 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Keep Your Folio Mobile</title>
 <style>
-:root{--bg:#c8d4e8;--card:#e8edf6;--ink:#0d1a30;--mut:#2a3e60;--acc:#d4960a;--onacc:#000;--line:#bec8da;--err:#e03050;--g1:rgba(30,58,138,.05);--g2:rgba(99,102,241,.10);--g3:rgba(14,165,233,.08);--g4:rgba(0,212,136,.05);--g5:rgba(240,180,41,.08);--gn:#008060;--rd:#e03050;--bl:#2d7dd2;--pu:#7c4dff;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1f2e;--card:#2e3550;--ink:#e0ecff;--mut:#9ab4d4;--acc:#e07b00;--onacc:#000;--line:#3e4870;--err:#ff5c72;--g1:rgba(30,58,138,.10);--g2:rgba(99,102,241,.09);--g3:rgba(14,165,233,.07);--g4:rgba(0,212,136,.05);--g5:rgba(240,180,41,.04);--gn:#00d4aa;--rd:#ff5c72;--bl:#4d9fff;--pu:#9b6dff;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1a1f2e;--card:#2e3550;--ink:#e0ecff;--mut:#9ab4d4;--acc:#e07b00;--onacc:#000;--line:#3e4870;--err:#ff5c72;--g1:rgba(30,58,138,.10);--g2:rgba(99,102,241,.09);--g3:rgba(14,165,233,.07);--g4:rgba(0,212,136,.05);--g5:rgba(240,180,41,.04);--gn:#00d4aa;--rd:#ff5c72;--bl:#4d9fff;--pu:#9b6dff;color-scheme:dark}
+:root{--bg:#c8d4e8;--card:#e8edf6;--ink:#0d1a30;--mut:#2a3e60;--acc:#a65208;--accf:#d4960a;--onacc:#000;--line:#bec8da;--err:#e03050;--g1:rgba(30,58,138,.05);--g2:rgba(99,102,241,.10);--g3:rgba(14,165,233,.08);--g4:rgba(0,212,136,.05);--g5:rgba(240,180,41,.08);--gn:#008060;--rd:#e03050;--bl:#2d7dd2;--pu:#7c4dff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1f2e;--card:#2e3550;--ink:#e0ecff;--mut:#9ab4d4;--acc:#ff9a1f;--accf:#e07b00;--onacc:#000;--line:#3e4870;--err:#ff5c72;--g1:rgba(30,58,138,.10);--g2:rgba(99,102,241,.09);--g3:rgba(14,165,233,.07);--g4:rgba(0,212,136,.05);--g5:rgba(240,180,41,.04);--gn:#00d4aa;--rd:#ff5c72;--bl:#4d9fff;--pu:#9b6dff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1f2e;--card:#2e3550;--ink:#e0ecff;--mut:#9ab4d4;--acc:#ff9a1f;--accf:#e07b00;--onacc:#000;--line:#3e4870;--err:#ff5c72;--g1:rgba(30,58,138,.10);--g2:rgba(99,102,241,.09);--g3:rgba(14,165,233,.07);--g4:rgba(0,212,136,.05);--g5:rgba(240,180,41,.04);--gn:#00d4aa;--rd:#ff5c72;--bl:#4d9fff;--pu:#9b6dff;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:radial-gradient(ellipse 70% 55% at 50% 0%,var(--g1) 0%,transparent 100%),radial-gradient(ellipse 60% 50% at 95% 10%,var(--g2) 0%,transparent 100%),radial-gradient(ellipse 55% 45% at 0% 90%,var(--g3) 0%,transparent 100%),radial-gradient(ellipse 40% 40% at 55% 55%,var(--g4) 0%,transparent 100%),radial-gradient(ellipse 35% 35% at 90% 80%,var(--g5) 0%,transparent 100%),var(--bg) fixed;color:var(--ink);font:17px/1.4 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+html{background:var(--bg)}
+body{background:transparent;color:var(--ink);font:17px/1.4 "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 70% 55% at 50% 0%,var(--g1) 0%,transparent 100%),radial-gradient(ellipse 60% 50% at 95% 10%,var(--g2) 0%,transparent 100%),radial-gradient(ellipse 55% 45% at 0% 90%,var(--g3) 0%,transparent 100%),radial-gradient(ellipse 40% 40% at 55% 55%,var(--g4) 0%,transparent 100%),radial-gradient(ellipse 35% 35% at 90% 80%,var(--g5) 0%,transparent 100%),var(--bg)}
 main{max-width:480px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:100%}
 h1{font-size:1.5rem;margin:8px 0 0;letter-spacing:-.01em}
 h2{font-size:1.25rem;margin:4px 0}
@@ -27,7 +29,7 @@ p{margin:0;color:var(--mut)}
 .top{display:flex;justify-content:space-between;align-items:center;color:var(--mut);font-size:.85rem}
 button,input,select{font:inherit;color:inherit}
 button{min-height:52px;border-radius:14px;border:1px solid var(--line);background:var(--card);padding:0 16px;text-align:left;cursor:pointer}
-button.p{background:var(--acc);color:var(--onacc);border-color:var(--acc);font-weight:600;text-align:center}
+button.p{background:var(--accf);color:var(--onacc);border-color:var(--acc);font-weight:600;text-align:center}
 button.l{border:0;background:none;min-height:40px;color:var(--mut);text-align:center}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 input,select{width:100%;min-height:52px;border-radius:14px;border:1px solid var(--line);background:var(--card);padding:0 14px}
@@ -66,7 +68,7 @@ label{display:flex;flex-direction:column;gap:6px;color:var(--mut);font-size:.9re
 .gt b{font-size:.82rem;line-height:1.15}
 .gi{display:flex;align-items:flex-start;justify-content:space-between;width:100%;color:color-mix(in srgb,var(--acc) 72%,var(--ink) 28%)}
 .gi svg{width:22px;height:22px;stroke-width:1.75}
-.gn{font-style:normal;font-size:.68rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--onacc)}
+.gn{font-style:normal;font-size:.68rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;display:flex;align-items:center;justify-content:center;background:var(--accf);color:var(--onacc)}
 .gt:active{transform:scale(.97)}
 .dd{display:inline-flex;align-items:center;gap:5px;color:var(--k);font-size:.7rem;font-weight:700}.dd i{width:7px;height:7px;border-radius:50%;background:var(--k)}
 .dsum{display:flex;flex-direction:column;gap:8px}.dsum b{font-size:.95rem}.dsum small{display:block;color:var(--mut);font-size:.78rem;margin-top:2px}
@@ -110,7 +112,7 @@ main>section{display:flex;flex-direction:column;gap:14px}
 .fh{display:flex;align-items:center;gap:12px}
 .fh .bk{width:44px;height:44px;min-height:44px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;flex:none}
 .fh h2{margin:0;font-size:1.3rem;line-height:1.2}.fh small{color:var(--mut)}
-.pg{display:flex;gap:6px}.pg i{flex:1;height:4px;border-radius:2px;background:var(--line)}.pg i.on{background:var(--acc)}
+.pg{display:flex;gap:6px}.pg i{flex:1;height:4px;border-radius:2px;background:var(--line)}.pg i.on{background:var(--accf)}
 .cta{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));padding-top:10px;background:linear-gradient(transparent,var(--bg) 40%);display:flex;flex-direction:column;gap:8px;margin-top:auto}
 .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:18px 6px 4px}
 .hic{width:72px;height:72px;border-radius:24px;display:flex;align-items:center;justify-content:center;color:var(--acc);background:color-mix(in srgb,var(--acc) 16%,transparent)}
@@ -149,7 +151,7 @@ details.cd summary{cursor:pointer;font-weight:600;min-height:28px}
 .tbi button{flex:1;min-height:56px;border:0;border-radius:20px;background:none;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.72rem;color:var(--mut);text-align:center}
 .tbi button[aria-current="page"]{color:var(--acc);background:color-mix(in srgb,var(--acc) 15%,transparent);font-weight:800}
 .tbic{position:relative;display:flex}
-.bd{position:absolute;top:-6px;right:-12px;min-width:18px;height:18px;border-radius:9px;padding:0 5px;background:var(--acc);color:var(--onacc);font:700 .68rem/18px system-ui;text-align:center;font-style:normal}
+.bd{position:absolute;top:-6px;right:-12px;min-width:18px;height:18px;border-radius:9px;padding:0 5px;background:var(--accf);color:var(--onacc);font:700 .68rem/18px system-ui;text-align:center;font-style:normal}
 label.chk{flex-direction:row;align-items:center;gap:12px;color:var(--ink);font-size:1rem}label.chk input{width:22px;min-height:22px;height:22px;flex:none;accent-color:var(--acc)}
 .tb{padding:0 16px calc(8px + env(safe-area-inset-bottom,0px))}
 .tbi{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:0;max-width:330px;padding:5px;border-radius:22px;box-shadow:0 6px 22px rgba(0,0,0,.26)}
@@ -176,7 +178,7 @@ main{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .swr>span:first-child{flex:1}.swr b{display:block;font-weight:600}.swr small{display:block;color:var(--mut);font-weight:400;font-size:.8rem}
 .trk{flex:none;width:52px;height:30px;border-radius:15px;background:color-mix(in srgb,var(--ink) 22%,transparent);position:relative;transition:background .2s}
 .trk::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:transform .22s cubic-bezier(.3,.9,.3,1)}
-.swr[aria-checked="true"] .trk{background:var(--acc)}.swr[aria-checked="true"] .trk::after{transform:translateX(22px)}
+.swr[aria-checked="true"] .trk{background:var(--accf)}.swr[aria-checked="true"] .trk::after{transform:translateX(22px)}
 .fld{display:flex;flex-direction:column;gap:12px}
 textarea#cm{min-height:140px;resize:none;overflow:hidden}
 a.alt{color:var(--acc);text-decoration:none;font-weight:800}
@@ -243,7 +245,7 @@ button.p[disabled]{opacity:.5;box-shadow:none}
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.8.1.01", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.8.1.03", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -302,7 +304,7 @@ async function chargerListe(t){
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
 var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});
-/* ===== Connexion Google : récupérer ses comptes depuis le classeur « KYF - Keep Your Folio » (1.8.1.01)
+/* ===== Connexion Google : récupérer ses comptes depuis le classeur « KYF - Keep Your Folio » (1.8.1.03)
    Même identifiant OAuth, même page de retour et même service d'échange que KYF PC. Droit demandé : drive.file
    (uniquement le classeur créé par KYF). Le jeton d'accès reste en mémoire ; le jeton de renouvellement est gardé
    dans le coffre chiffré. Seuls les NOMS sont conservés (comptes, titres, famille, biens) : jamais un montant. */
@@ -384,7 +386,7 @@ async function gGo(){if(gBusy)return;gBusy=true;msg="";msgOk=false;var b=$("goo"
   try{var o=await gLire();gBusy=false;await chargerListe(o)}
   catch(e){gBusy=false;msg=gErr(e);msgOk=false;render()}}
 function gOff(){GTOK=null;GEXP=0;sv("grefresh",null);msg="Déconnecté de Google. Les comptes déjà chargés sont conservés.";msgOk=true;render()}
-/* ===== GitHub (Gist chiffré) et WebDAV : même sauvegarde que KYF PC, lue en lecture seule (1.8.1.01)
+/* ===== GitHub (Gist chiffré) et WebDAV : même sauvegarde que KYF PC, lue en lecture seule (1.8.1.03)
    Le fichier « kyf-patrimoine.json » est chiffré par KYF PC avec le « mot de passe de chiffrement » (AES-GCM, PBKDF2 100 000).
    Déchiffré ici en mémoire ; seuls les noms sont gardés (comptes, titres, famille, biens), jamais les montants.
    Jeton, identifiants et mot de passe sont rangés dans le coffre chiffré de cet appareil. */
@@ -428,7 +430,7 @@ function pcSave(kind){
   if(!us||!pa||!p2){msg="Renseignez l’identifiant, le mot de passe WebDAV et le mot de passe de chiffrement KYF.";msgOk=false;return render()}
   sv("wd",{url:u,user:us,pass:pa,pwd:p2});return pcGo("wd",true)}
 function pcOff(kind){sv(kind,null);msg=(kind==="gh"?"GitHub":"WebDAV")+" retiré de cet appareil. Les comptes déjà chargés sont conservés.";msgOk=true;render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.8.1.01)
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.8.1.03)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
@@ -484,7 +486,7 @@ var DEFP=null;window.addEventListener("beforeinstallprompt",function(e){e.preven
 function instRow(){var st=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone;if(st)return"";var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   if(DEFP)return `<button class="li" id="inst" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur l’écran d’accueil</b><small>Ouverture plein écran, comme une appli</small></span><span class="ch">${CHEV}</span></button>`;
   if(ios)return `<div class="li" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur iPhone</b><small style="white-space:normal">Bouton Partager, puis « Sur l’écran d’accueil »</small></span></div>`;return""}
-/* ===== Rester déverrouillé à l'actualisation (1.8.1.01)
+/* ===== Rester déverrouillé à l'actualisation (1.8.1.03)
    Pendant le délai de verrouillage automatique, la clé du coffre (non exportable) et la phrase chiffrée par une autre clé non
    exportable sont gardées dans IndexedDB. Tout est effacé au verrouillage, à l'effacement du coffre ou à l'expiration. */
 var SESSP="kyfm-sess-on",sessT=0;
