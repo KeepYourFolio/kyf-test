@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.10", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.11", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -250,6 +250,34 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.11)
+   La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
+   propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
+   Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
+var BIO="kyfm-bio";
+function bioDispo(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&window.isSecureContext)}
+function bioActif(){try{var c=JSON.parse(localStorage.getItem(BIO));return !!(c&&c.id&&c.salt&&c.iv&&c.ct)}catch(e){return false}}
+function bioOff(){try{localStorage.removeItem(BIO)}catch(e){}}
+async function bioCle(res){var raw=res&&res.prf&&res.prf.results&&res.prf.results.first;if(!raw)throw new Error("noprf");
+  var b=await crypto.subtle.importKey("raw",raw,"HKDF",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"HKDF",hash:"SHA-256",salt:new Uint8Array(0),info:new TextEncoder().encode("kyf-mobile-bio-v1")},b,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
+async function bioActiver(){
+  if(!bioDispo()||!PH)throw new Error("indispo");
+  var salt=crypto.getRandomValues(new Uint8Array(32)),chal=crypto.getRandomValues(new Uint8Array(32)),uid=crypto.getRandomValues(new Uint8Array(16));
+  var cr=await navigator.credentials.create({publicKey:{rp:{name:"KYF Mobile",id:location.hostname},user:{id:uid,name:"coffre-kyf",displayName:"Coffre KYF"},challenge:chal,
+    pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{residentKey:"preferred",userVerification:"required"},timeout:60000,attestation:"none",extensions:{prf:{}}}});
+  var ext=cr.getClientExtensionResults();if(!ext.prf||!ext.prf.enabled)throw new Error("noprf");
+  var id=new Uint8Array(cr.rawId),res=await bioLire(id,salt),key=await bioCle(res),iv=crypto.getRandomValues(new Uint8Array(12));
+  var ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,new TextEncoder().encode(PH)));
+  localStorage.setItem(BIO,JSON.stringify({v:1,id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct)}))}
+async function bioLire(id,salt){
+  var a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:id}],userVerification:"required",timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
+  return a.getClientExtensionResults()}
+async function bioOuvrir(){
+  var c=JSON.parse(localStorage.getItem(BIO)),res=await bioLire(unb64(c.id),unb64(c.salt)),key=await bioCle(res);
+  var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(c.iv)},key,unb64(c.ct));
+  await ouvrir(new TextDecoder().decode(pt))}
+function bioClic(){S.bioTry=true;msg="";bioOuvrir().then(function(){go("home",{})}).catch(function(e){msg=(e&&e.name==="NotAllowedError")?"Déverrouillage annulé. Utilisez votre phrase secrète ou réessayez.":"Clé d’accès indisponible. Utilisez votre phrase secrète.";msgOk=false;render()})}
 function unb64(t){var b=atob(t),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
 async function deriveKey(ph,sel,iter){var base=await crypto.subtle.importKey("raw",new TextEncoder().encode(ph),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt:sel,iterations:iter,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])}
 function persist(){saving=saving.then(async function(){
@@ -262,7 +290,7 @@ async function ouvrir(ph){var c=JSON.parse(localStorage.getItem(KV)),sel=unb64(c
   STATE=JSON.parse(new TextDecoder().decode(pt));KEY=key;PH=ph;SELB=sel}
 async function creer(ph,init){var sel=crypto.getRandomValues(new Uint8Array(16));KEY=await deriveKey(ph,sel,ITER);SELB=sel;PH=ph;STATE=init||{};persist();await saving;if(!localStorage.getItem(KV))throw 0}
 function delaiMin(){var v=ld(K.delay,2);return[1,2,5,15].indexOf(v)>-1?v:2}
-async function changerPhrase(n){var sel=crypto.getRandomValues(new Uint8Array(16));KEY=await deriveKey(n,sel,ITER);SELB=sel;PH=n;persist();await saving}
+async function changerPhrase(n){bioOff();var sel=crypto.getRandomValues(new Uint8Array(16));KEY=await deriveKey(n,sel,ITER);SELB=sel;PH=n;persist();await saving}
 var DEFP=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();DEFP=e;if(STATE&&(S.v==="reglages"||S.v==="reg_app"))render()});window.addEventListener("appinstalled",function(){DEFP=null;if(STATE&&(S.v==="reglages"||S.v==="reg_app"))render()});
 function instRow(){var st=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone;if(st)return"";var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   if(DEFP)return `<button class="li" id="inst" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur l’écran d’accueil</b><small>Ouverture plein écran, comme une appli</small></span><span class="ch">${CHEV}</span></button>`;
@@ -270,7 +298,7 @@ function instRow(){var st=(window.matchMedia&&matchMedia("(display-mode: standal
 function verrouiller(){PART=null;STATE=null;KEY=null;PH=null;SELB=null;S={v:"home",d:{}};render()}
 function ancien(){var o={};[K.ops,K.tick,K.last,K.frais,K.fam,K.pour].forEach(function(k){try{var x=localStorage.getItem(k);if(x)o[k]=JSON.parse(x)}catch(e){}});return o}
 function effacerAncien(){[K.ops,K.tick,K.last,K.frais,K.fam,K.pour,K.phrase].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}})}
-function effacer(){try{localStorage.removeItem(KV)}catch(e){}effacerAncien();STATE=null;KEY=null;PH=null;SELB=null}
+function effacer(){bioOff();try{localStorage.removeItem(KV)}catch(e){}effacerAncien();STATE=null;KEY=null;PH=null;SELB=null}
 document.addEventListener("visibilitychange",function(){if(document.hidden){cacheLe=Date.now()}else if(STATE&&cacheLe&&Date.now()-cacheLe>delaiMin()*60000){verrouiller()}});
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function go(v,d){if(typeof v==="string"){if(v.indexOf("reg_")===0)S.rb=v;else if(v==="reglages")S.rb=null}if(v!=="voix"&&S.rec)arreterDicter();S.v=v;if(d)S.d=d;if(v!=="paquet"){S.undo=null;S.pqn=20;S.pqq=""}render()}
@@ -819,7 +847,7 @@ function render(){
   if(v==="phrase"){
     h+=`<div class="hero"><span class="hic">${LOCKB}</span><h1>Créez votre coffre</h1><p>Votre phrase secrète verrouille l’appli et chiffre toutes vos données sur ce téléphone. Elle n’est enregistrée nulle part : si vous l’oubliez, il faudra effacer le coffre. Utilisez la même dans KYF sur ordinateur.</p></div>${pwField("f1","Phrase secrète (8 caractères minimum)")}${pwField("f2","Confirme la phrase")}${msgHtml()}<div class="cta"><button class="p" id="ok">Créer le coffre chiffré</button></div>`;
   }else if(v==="unlock"){
-    h+=`<div class="hero"><span class="hic">${LOCKB}</span><h1>Appli verrouillée</h1><p>Entrez votre phrase secrète pour ouvrir vos données chiffrées.</p></div>${pwField("f1","Phrase secrète")}${msgHtml()}<div class="cta"><button class="p" id="ul">Déverrouiller</button><button class="l danger" id="rz">Phrase oubliée : effacer le coffre</button></div>`;
+    h+=`<div class="hero"><span class="hic">${LOCKB}</span><h1>Appli verrouillée</h1><p>Entrez votre phrase secrète pour ouvrir vos données chiffrées.</p></div>${pwField("f1","Phrase secrète")}${msgHtml()}<div class="cta">${bioActif()?`<button class="p" id="bio">${I.key} Déverrouiller avec l’empreinte ou la clé d’accès</button>`:""}<button class="${bioActif()?"":"p"}" id="ul">Déverrouiller avec la phrase</button><button class="l danger" id="rz">Phrase oubliée : effacer le coffre</button></div>`;
   }else if(v==="home"){
     h+=`<h1>Nouvelle opération</h1><p>Sur quel type de compte ?</p>${homeTop(o)}${vxRow()}<div class="list">${EVL.map(function(e){var n=comptes().filter(function(c){return c.type===e[0]}).length;return `<button class="li" data-env="${esc(e[0])}" style="--k:var(--acc)"><span class="ic" style="font-size:.62rem;font-weight:700">${e[3]}</span><span><b>${e[1]}</b><small>${e[2]}${n?" · "+n+" compte"+(n>1?"s":""):""}</small></span><span class="ch">${CHEV}</span></button>`}).join("")}</div>`;
   }else if(v==="cpre"){
@@ -966,7 +994,7 @@ function render(){
   }else if(v==="reg_sec"){
     var dm=delaiMin(),DL=[1,2,5,15];
     h+=regHead("Sécurité","Réglages");
-    h+=`<p class="gl">Sécurité</p><div class="list"><button class="li" id="chp" style="--k:var(--acc)"><span class="ic">${I.key}</span><span><b>Changer la phrase secrète</b><small>Re-chiffre tout le coffre</small></span><span class="ch">${CHEV}</span></button><button class="li" id="vrl" style="--k:var(--acc)"><span class="ic">${LOCK}</span><span><b>Verrouiller maintenant</b><small>Il faudra retaper votre phrase</small></span></button></div><p class="gl">Verrouillage automatique, appli en arrière-plan</p><div class="seg" role="group" aria-label="Verrouillage automatique">${DL.map(function(m){return `<button data-dl="${m}" aria-pressed="${dm===m?"true":"false"}">${m} min</button>`}).join("")}</div>`;
+    h+=`<p class="gl">Sécurité</p><div class="list"><button class="li" id="chp" style="--k:var(--acc)"><span class="ic">${I.key}</span><span><b>Changer la phrase secrète</b><small>Re-chiffre tout le coffre</small></span><span class="ch">${CHEV}</span></button>${bioDispo()?(bioActif()?`<button class="li" id="bioff" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Empreinte et clé d’accès : activées</b><small>Appuyez pour désactiver</small></span></button>`:`<button class="li" id="bioon" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Activer l’empreinte ou la clé d’accès</b><small>Empreinte, visage ou gestionnaire de mots de passe</small></span><span class="ch">${CHEV}</span></button>`):""}<button class="li" id="vrl" style="--k:var(--acc)"><span class="ic">${LOCK}</span><span><b>Verrouiller maintenant</b><small>Il faudra retaper votre phrase</small></span></button></div><p class="gl">Verrouillage automatique, appli en arrière-plan</p><div class="seg" role="group" aria-label="Verrouillage automatique">${DL.map(function(m){return `<button data-dl="${m}" aria-pressed="${dm===m?"true":"false"}">${m} min</button>`}).join("")}</div>`;
     h+=`<p class="gl danger">Zone sensible</p><div class="list"><button class="li" id="oub" style="--k:var(--rd)"><span class="ic">${I.trash}</span><span><b class="danger">Effacer le coffre</b><small>Supprime toutes les données de cet appareil</small></span></button></div>`;
   }else if(v==="reg_aff"){
     h+=regHead("Affichage","Réglages");
@@ -1046,7 +1074,7 @@ function lier(o){
     if(n!==c){msg="Les deux nouvelles phrases sont différentes.";return render()}
     if(n===a){msg="La nouvelle phrase doit être différente de l’actuelle.";return render()}
     var bt=this;bt.disabled=true;bt.textContent="Re-chiffrement…";
-    changerPhrase(n).then(function(){msg="Phrase changée. Utilisez-la aussi dans KYF sur ordinateur.";msgOk=true;go(S.rb||"reglages",{})}).catch(function(){msg="Changement impossible sur cet appareil.";render()})};
+    changerPhrase(n).then(function(){msg="Phrase changée. Utilisez-la aussi dans KYF sur ordinateur. Réactivez l’empreinte dans Réglages.";msgOk=true;go(S.rb||"reglages",{})}).catch(function(){msg="Changement impossible sur cet appareil.";render()})};
   Array.prototype.forEach.call(app.querySelectorAll("[data-un]"),function(b){b.onclick=function(){lireArb();S.d.arb.unite=b.getAttribute("data-un");render()}});
   Array.prototype.forEach.call(app.querySelectorAll("[data-sw2]"),function(b){b.onclick=function(){lireMontant();var k2=b.getAttribute("data-sw2");S.d[k2]=!S.d[k2];render()}});
   Array.prototype.forEach.call(app.querySelectorAll("[data-sw3]"),function(b){b.onclick=function(){lireAct();S.d.act.incl=S.d.act.incl===false;render()}});
@@ -1239,6 +1267,10 @@ function lier(o){
   if($("lk"))$("lk").onclick=verrouiller;
   if($("vrl"))$("vrl").onclick=verrouiller;
   if(S.v==="unlock"&&$("f1"))$("f1").onkeydown=function(e){if(e.key==="Enter")$("ul").click()};
+  if($("bio"))$("bio").onclick=bioClic;
+  if($("ul")&&bioActif()&&!S.bioTry&&!document.hidden)setTimeout(function(){if($("ul")&&!S.bioTry&&!STATE)bioClic()},250);
+  if($("bioon"))$("bioon").onclick=function(){var b=this;b.disabled=true;bioActiver().then(function(){msg="Clé d’accès activée : l’empreinte ou le visage déverrouille l’appli.";msgOk=true;render()}).catch(function(e){bioOff();msg=(e&&e.name==="NotAllowedError")?"Activation annulée.":(e&&e.message==="noprf")?"Ce téléphone ou ce gestionnaire de mots de passe ne gère pas ce mode. La phrase secrète reste utilisée.":"Activation impossible sur cet appareil.";msgOk=false;render()})};
+  if($("bioff"))$("bioff").onclick=function(){bioOff();msg="Clé d’accès désactivée sur cet appareil.";msgOk=true;render()};
   if($("ul"))$("ul").onclick=function(){var b=this,p=$("f1").value;if(!p)return;b.disabled=true;b.textContent="Déverrouillage…";ouvrir(p).then(function(){go("home",{})}).catch(function(){msg="Phrase secrète incorrecte. Réessayez.";render()})};
   if($("rz"))$("rz").onclick=function(){if(confirm("Effacer tout le coffre de cet appareil ? Les opérations non envoyées seront perdues.")){effacer();render()}};
   if($("ok"))$("ok").onclick=function(){var a=$("f1").value,b=$("f2").value;if(a.length<8){msg="8 caractères minimum. Pensez à plusieurs mots.";return render()}if(a!==b){msg="Les deux phrases sont différentes.";return render()}var bt=this;bt.disabled=true;bt.textContent="Chiffrement…";creer(a,ancien()).then(function(){effacerAncien();go("home",{})}).catch(function(){STATE=null;KEY=null;PH=null;msg="Création du coffre impossible : le chiffrement n’est pas disponible ici. Ouvrez la page en https.";render()})};
