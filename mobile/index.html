@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.09", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.10", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -1189,6 +1189,9 @@ function lier(o){
   Array.prototype.forEach.call(app.querySelectorAll("[data-sw4]"),function(b){b.onclick=function(){sv(K.famon,!famOn());render()}});
   if($("vx"))$("vx").onclick=function(){S.d=Object.assign({},S.d,{vfrom:S.v});S.vt="";S.vr=null;S.vexo=false;go("voix")};
   if($("vt"))$("vt").oninput=function(){S.vt=this.value;S.vr=null};
+  function versDoc(t){S.dfrom="voix";S.dt=String(t).slice(0,6000);S.dtn="";S.dr=null;S.vt="";go("doc");analyserDoc();render()}
+  function longTxt(t){t=String(t||"").trim();return t.length>90||/\n/.test(t)}
+  if($("vt"))$("vt").onpaste=function(e){var t=(e.clipboardData||window.clipboardData).getData("text");if(longTxt(t)){e.preventDefault();versDoc(t)}};
   if($("vdoc"))$("vdoc").onclick=function(){if($("vt"))S.vt=$("vt").value;S.dfrom="voix";S.dt="";S.dtn="";S.dr=null;go("doc");autoColler()};
   if($("dtx"))$("dtx").oninput=function(){S.dt=this.value;S.dr=null};
   if($("dgo"))$("dgo").onclick=function(){if($("dtx"))S.dt=$("dtx").value;analyserDoc();render()};
@@ -1202,7 +1205,7 @@ function lier(o){
     b[sel?"onchange":"oninput"]=function(){if(!S.dr||!S.dr.f)return;S.dr.f[k]=this.value;S.dr.c[k]="s";
       if(sel)return render();var lb=this.parentNode&&this.parentNode.querySelector(".dcc");if(lb){lb.textContent="saisi";lb.style.setProperty("--k","var(--gn)")}}});
   Array.prototype.forEach.call(app.querySelectorAll("[data-dt]"),function(b){b.oninput=function(){if(!S.dr)return;S.dr.tt=this.value;S.dr.tiMod=true;S.dr.c.ti="s";var lb=this.parentNode&&this.parentNode.querySelector(".dcc");if(lb){lb.textContent="saisi";lb.style.setProperty("--k","var(--gn)")}}});
-  if($("vgo"))$("vgo").onclick=function(){S.vt=$("vt").value;S.vr=parseVoix(S.vt,S.d.env||null);render()};
+  if($("vgo"))$("vgo").onclick=function(){S.vt=$("vt").value;if(longTxt(S.vt))return versDoc(S.vt);S.vr=parseVoix(S.vt,S.d.env||null);render()};
   if($("vex"))$("vex").onclick=function(){if($("vt"))S.vt=$("vt").value;S.vexo=!S.vexo;render()};
   Array.prototype.forEach.call(app.querySelectorAll("[data-vx]"),function(b){b.onclick=function(){S.vt=vxExemples(S.d.env||null)[+b.getAttribute("data-vx")];S.vr=parseVoix(S.vt,S.d.env||null);S.vexo=false;render()}});
   if($("vmic"))$("vmic").onclick=function(){if($("vt"))S.vt=$("vt").value;dicter()};
