@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.03", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.05", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -267,7 +267,7 @@ var DEFP=null;window.addEventListener("beforeinstallprompt",function(e){e.preven
 function instRow(){var st=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone;if(st)return"";var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   if(DEFP)return `<button class="li" id="inst" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur l’écran d’accueil</b><small>Ouverture plein écran, comme une appli</small></span><span class="ch">${CHEV}</span></button>`;
   if(ios)return `<div class="li" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur iPhone</b><small style="white-space:normal">Bouton Partager, puis « Sur l’écran d’accueil »</small></span></div>`;return""}
-function verrouiller(){STATE=null;KEY=null;PH=null;SELB=null;S={v:"home",d:{}};render()}
+function verrouiller(){PART=null;STATE=null;KEY=null;PH=null;SELB=null;S={v:"home",d:{}};render()}
 function ancien(){var o={};[K.ops,K.tick,K.last,K.frais,K.fam,K.pour].forEach(function(k){try{var x=localStorage.getItem(k);if(x)o[k]=JSON.parse(x)}catch(e){}});return o}
 function effacerAncien(){[K.ops,K.tick,K.last,K.frais,K.fam,K.pour,K.phrase].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}})}
 function effacer(){try{localStorage.removeItem(KV)}catch(e){}effacerAncien();STATE=null;KEY=null;PH=null;SELB=null}
@@ -437,6 +437,257 @@ function parseVoix(txt,envCtx){
     res.resume=libType(T)+" · "+env+(res.ticker?" · "+res.ticker:"")+" · "+eur(Math.round(Number(mt)*100))}
   res.resume+=" · "+String(date).split("-").reverse().join("/")+(defE?" (compte supposé : "+env+")":"");
   return res}
+/* ===== Import de texte (1.7.0.04) : parseur documentaire =====
+   Lit un texte copié ou partagé (aucune règle propre à une banque), repère les champs
+   financiers et attribue une confiance à chacun. Un champ ambigu reste vide.
+   Confiance : "h" = sûr, "m" = à vérifier, "n" = non trouvé. */
+var DC_MOIS=function(n){return /^jan/.test(n)?1:/^fev/.test(n)?2:/^mar/.test(n)?3:/^avr/.test(n)?4:/^mai/.test(n)?5:/^juin/.test(n)?6:/^juil/.test(n)?7:/^aou/.test(n)?8:/^sep/.test(n)?9:/^oct/.test(n)?10:/^nov/.test(n)?11:/^dec/.test(n)?12:0};
+var DC_ISIN=/\b[a-z]{2}[a-z0-9]{9}\d\b/g, DC_DATES=[
+  /\b((?:19|20)\d{2})-(\d{1,2})-(\d{1,2})\b/g,
+  /\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}|\d{2})\b/g,
+  /\b(\d{1,2})(?:er)?\s+(janv\w*|fevr\w*|mars|avr\w*|mai|juin|juil\w*|aout|sept\w*|oct\w*|nov\w*|dec\w*)\.?\s+(\d{4})\b/g];
+function dcBlanc(s,re){return s.replace(re,function(m){return new Array(m.length+1).join(" ")})}
+function dcIsinOk(s){s=String(s).toUpperCase();if(!/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(s))return false;
+  var d="",i,c;for(i=0;i<s.length;i++){c=s.charCodeAt(i);d+=c>=65?String(c-55):s.charAt(i)}
+  var sum=0,alt=false;for(i=d.length-1;i>=0;i--){var n=+d.charAt(i);if(alt){n*=2;if(n>9)n-=9}sum+=n;alt=!alt}return sum%10===0}
+function dcNum(s){s=String(s||"").replace(/[  \s]/g,"");if(!/^\d[\d.,]*$/.test(s))return"";
+  var lc=s.lastIndexOf(","),ld=s.lastIndexOf("."),dec=Math.max(lc,ld);
+  if(lc>-1&&ld>-1){s=s.slice(0,dec).replace(/[.,]/g,"")+"."+s.slice(dec+1)}
+  else if(dec>-1){var p=s.split(s.charAt(dec));s=p.length>2?s.replace(/[.,]/g,""):p[0]+"."+p[1]}
+  s=s.replace(/\.$/,"");var n=Number(s);return isFinite(n)?s:""}
+function dcNums(str){var out=[],m,re=/\d{1,3}(?:[   ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)*/g;
+  while((m=re.exec(str))){var v=dcNum(m[0]);if(v!=="")out.push(v)}return out}
+function dcDateIso(y,m,d){y=+y;m=+m;d=+d;if(y<100)y+=2000;if(m<1||m>12||d<1||d>31)return"";
+  var t=new Date(y,m-1,d);if(t.getFullYear()!==y||t.getMonth()!==m-1||t.getDate()!==d)return"";
+  var lim=new Date();lim.setDate(lim.getDate()+1);if(t>lim)return"";return y+"-"+(m<10?"0":"")+m+"-"+(d<10?"0":"")+d}
+function dcCherche(NL,ML,re,skip){
+  for(var i=0;i<NL.length;i++){
+    if(skip&&skip.test(NL[i]))continue;
+    var m=re.exec(NL[i]);if(!m)continue;
+    var nums=dcNums(ML[i].slice(m.index+m[0].length));
+    if(nums.length)return{v:nums[0],i:i,mem:true};
+    var nx=ML[i+1];
+    if(nx!=null&&/\d/.test(nx)&&!/[a-z]{3,}/.test(nx.replace(/\b(eur|euros?|usd|chf|gbp|parts?)\b/g,""))){var n2=dcNums(nx);if(n2.length)return{v:n2[0],i:i+1,mem:false}}}
+  return null}
+function dcTypeCompte(env,ty){
+  if(env==="Livret")return ty==="versement"?"livret_depot":ty==="retrait"?"livret_retrait":ty==="interets"?"livret_interets":null;
+  if(env==="AV"||env==="PER")return ty==="versement"?"av_versement":(ty==="rachat"||ty==="retrait")?"av_rachat":null;
+  if(env==="Crypto")return ty==="achat"?"crypto_achat":ty==="vente"?"crypto_vente":null;
+  if(env==="PEA"||env==="PEA-PME"||env==="CTO")return({achat:"achat",vente:"vente",dividende:"dividende",versement:"versement",retrait:"retrait"})[ty]||null;
+  return null}
+function dcTitreIsin(isin){var L=sources(),i;isin=String(isin).toUpperCase();
+  for(i=0;i<L.length;i++)if(String(L[i].isin||"").toUpperCase()===isin)return{ticker:L[i].ticker||"",isin:L[i].isin||isin,nom:L[i].nom||"",inconnu:false};return null}
+function parseDoc(txt){
+  var raw=String(txt||"").replace(/\r/g,"").slice(0,6000);
+  if(raw.replace(/\s/g,"").length<6)return{ok:false,why:"Collez ou partagez le texte de l’opération (au moins une ligne)."};
+  var OL=raw.split("\n").map(function(x){return x.replace(/[  ]/g," ").trim()}).filter(Boolean).slice(0,120);
+  var NL=OL.map(function(x){return nrm(x).replace(/['’]/g," ")}),ML=NL.map(function(x){
+    x=dcBlanc(x,DC_ISIN);DC_DATES.forEach(function(r){x=dcBlanc(x,r)});x=dcBlanc(x,/\d{1,2}:\d{2}(?::\d{2})?/g);x=dcBlanc(x,/\d[\d.,]*\s*%/g);return x});
+  var T=NL.join("\n"),f={op:"",env:"",qty:"",prix:"",montant:"",frais:"",date:"",devise:""},c={op:"n",env:"n",ti:"n",qty:"n",prix:"n",montant:"n",frais:"n",date:"n",devise:"n"},notes=[],ti=null,i,m;
+  /* 1. Opération */
+  var F={achat:/\b(achat|achete|acheter|ordre d achat|buy|bought|purchase|plan d epargne|investissement programme|savings plan|dca)\b/,vente:/\b(vente|vendu|vendre|ordre de vente|sell|sold|cession)\b/,dividende:/\b(dividendes?|dividend|coupon|distribution de revenus?)\b/,interets:/\binterets?\b|\binterest\b/,rachat:/\brachat\b/,swap:/\b(swap|echange|conversion|convert(?:ed|ir)?)\b/,versement:/\b(versement|depot|virement entrant|cotisation|top ?up|deposit)\b/,retrait:/\b(retrait|virement sortant|withdrawal|withdraw)\b/};
+  var Tn=T,fort=[],faible=[];
+  ["achat","vente","dividende","interets","rachat","swap"].forEach(function(k){if(F[k].test(Tn))fort.push(k)});
+  ["versement","retrait"].forEach(function(k){if(F[k].test(Tn))faible.push(k)});
+  var ops=fort.length?fort:faible;
+  if(ops.length===1){f.op=ops[0];c.op="h"}else if(ops.length>1)notes.push("Plusieurs types d’opération reconnus ("+ops.join(", ")+") : choisissez le bon.");
+  if(f.op==="swap")return{ok:false,why:"Les échanges (swap) ne sont pas gérés par l’import de texte. Utilisez le menu Crypto > Échange."};
+  /* 2. Compte */
+  var envs=[];
+  if(/\bpea[ -]?pme\b/.test(T))envs.push("PEA-PME");else if(/\bpea\b/.test(T))envs.push("PEA");
+  if(/\bcto\b|compte[ -]titres?/.test(T))envs.push("CTO");
+  if(/assurance[ -]vie|\bav\b/.test(T))envs.push("AV");
+  if(/\bper\b/.test(T))envs.push("PER");
+  if(/\blivret\b|\bldds\b|\blep\b|\bldd\b/.test(T))envs.push("Livret");
+  var cryp=/\b(bitcoin|btc|ethereum|eth|solana|ripple|xrp|cardano|crypto)\b/.test(T);
+  if(envs.length===1){f.env=envs[0];c.env="h"}else if(envs.length>1)notes.push("Plusieurs comptes cités : choisissez le bon.");
+  /* 3. ISIN, titre */
+  var isins=[],seen={};
+  NL.forEach(function(l,k){var re=/\b[a-z]{2}[a-z0-9]{9}\d\b/g,mm;while((mm=re.exec(l))){var u=mm[0].toUpperCase();if(!seen[u]){seen[u]=1;isins.push({isin:u,i:k,ok:dcIsinOk(u)})}}});
+  var bons=isins.filter(function(x){return x.ok}),cand=bons.length?bons:isins;
+  if(cand.length){
+    var I0=cand[0],base=dcTitreIsin(I0.isin);
+    if(base){ti=base;c.ti="h"}
+    else{var nom=OL[I0.i].replace(new RegExp(I0.isin,"i"),"").replace(/[|:;·•\-–]+/g," ").replace(/\s+/g," ").trim();
+      if(!/[A-Za-z]{3,}/.test(nom)||nom.length>80){nom=I0.i>0?OL[I0.i-1]:"";if(!/[A-Za-z]{3,}/.test(nom)||nom.length>80)nom=""}
+      ti={ticker:"",isin:I0.isin,nom:nom,inconnu:true};c.ti="m";notes.push("Titre absent de votre liste : vérifiez le nom et l’ISIN.")}
+    if(!I0.ok){c.ti="m";notes.push("La clé de l’ISIN "+I0.isin+" ne correspond pas : vérifiez-le.")}
+    if(cand.length>1){c.ti="m";notes.push("Plusieurs ISIN trouvés : "+cand.map(function(x){return x.isin}).join(", ")+". Le premier est retenu.")}
+  }else{
+    var cr=null;
+    if(cryp||f.env==="Crypto"){var mc=/\b(bitcoin|btc|ethereum|ether|eth|solana|sol|ripple|xrp|cardano|ada)\b/.exec(T);if(mc&&VX_CRY[mc[1]]){cr=VX_CRY[mc[1]];ti={ticker:cr,isin:"",nom:cr,inconnu:false};c.ti="m";if(!f.env){f.env="Crypto";c.env="m"}}}
+    if(!ti){var L=sources(),hits={},nh=0,x;
+      for(x=0;x<L.length;x++){var tk=nrm(L[x].ticker||"").split(".")[0],nm=nrm(L[x].nom||""),hit=false;
+        if(nm.length>=5&&(" "+Tn.replace(/[^a-z0-9]+/g," ")+" ").indexOf(" "+nm.replace(/[^a-z0-9]+/g," ").trim()+" ")>-1)hit=true;
+        else if(tk.length>=3&&!VX_STOP[tk]&&new RegExp("(^|[^a-z0-9])"+tk.replace(/[^a-z0-9]/g,"")+"($|[^a-z0-9])").test(Tn))hit=true;
+        if(hit){var key=(L[x].isin||L[x].ticker||nm);if(!hits[key]){hits[key]=L[x];nh++}}}
+      if(nh===1){var h1=hits[Object.keys(hits)[0]];ti={ticker:h1.ticker||"",isin:h1.isin||"",nom:h1.nom||"",inconnu:false};c.ti="m"}
+      else if(nh>1)notes.push("Plusieurs titres de votre liste correspondent : saisissez le titre.")}}
+  /* 4. Frais, montant, quantité, prix */
+  var REF=/\b(frais|commissions?|fees?|courtage)\b/;
+  var rf=dcCherche(NL,ML,REF);if(rf){f.frais=rf.v;c.frais=rf.mem?"h":"m"}
+  var rt=dcCherche(NL,ML,/\b(montant(?: total| net| brut| de l ordre)?|total|somme|amount|valeur totale|valeur d execution)\b/,REF);
+  if(rt&&+rt.v>0){f.montant=rt.v;c.montant=rt.mem?"h":"m"}
+  var rq=dcCherche(NL,ML,/\b(quantite|qte|qty|nombre de (?:parts|titres|actions)|nb (?:de )?(?:parts|titres)|nombre|shares?|volume)\b/,REF);
+  if(rq&&+rq.v>0){f.qty=rq.v;c.qty=rq.mem?"h":"m"}
+  var rp=dcCherche(NL,ML,/\b(prix(?: unitaire| d execution| moyen)?|cours(?: d execution)?|price|valeur liquidative)\b/,REF);
+  if(rp&&+rp.v>0){f.prix=rp.v;c.prix=rp.mem?"h":"m"}
+  for(i=0;i<ML.length&&(!f.qty||!f.prix);i++){
+    var qx=/(\d+(?:[.,]\d+)?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)/.exec(ML[i]);
+    if(qx){var a=dcNum(qx[1]),b=dcNum(qx[2]);if(a&&b){if(!f.qty){f.qty=a;c.qty="m"}if(!f.prix){f.prix=b;c.prix="m"}}}}
+  if(!f.qty)for(i=0;i<ML.length;i++){
+    var mq=/(\d+(?:[.,]\d+)?)\s*(?:parts?|actions?|titres?|shares?|unites?)\b/.exec(ML[i])||/(\d+(?:[.,]\d+)?)\s*(?:btc|eth|sol|xrp|ada|bitcoin|ethereum|solana|ripple|cardano)\b/.exec(ML[i]);
+    if(mq){var qv=dcNum(mq[1]);if(+qv>0){f.qty=qv;c.qty="m";break}}}
+  if(!f.prix&&f.qty)for(i=0;i<ML.length;i++){
+    var mp=/\ba\s+(\d+(?:[ .,]\d+)*)\s*(?:€|eur\b|euros?\b)/.exec(ML[i]);
+    if(mp){var pv=dcNums(mp[1])[0];if(+pv>0){f.prix=pv;c.prix="m";break}}}
+  if(!f.montant){var eu=[],re2=/(\d+(?:[ .,]\d+)*)\s*(?:€|eur\b|euros?\b)/g,seenA={};
+    ML.forEach(function(l){var m2;re2.lastIndex=0;while((m2=re2.exec(l))){var v2=dcNums(m2[1])[0];if(v2&&+v2>0&&!seenA[v2]){seenA[v2]=1;eu.push(v2)}}});
+    if(eu.length===1&&eu[0]!==f.prix){f.montant=eu[0];c.montant="m"}}
+  /* 5. Date */
+  var ds=[];
+  NL.forEach(function(l,k){
+    var mm;DC_DATES[0].lastIndex=0;while((mm=DC_DATES[0].exec(l)))ds.push({d:dcDateIso(mm[1],mm[2],mm[3]),i:k});
+    DC_DATES[1].lastIndex=0;while((mm=DC_DATES[1].exec(l)))ds.push({d:dcDateIso(mm[3],mm[2],mm[1]),i:k});
+    DC_DATES[2].lastIndex=0;while((mm=DC_DATES[2].exec(l))){var mo=DC_MOIS(mm[2]);ds.push({d:mo?dcDateIso(mm[3],mo,mm[1]):"",i:k})}});
+  ds=ds.filter(function(x){return x.d});
+  var dist=[];ds.forEach(function(x){if(dist.indexOf(x.d)<0)dist.push(x.d)});
+  if(dist.length===1){f.date=dist[0];c.date=ds.some(function(x){return /\b(date|execut|le)\b/.test(NL[x.i])})?"h":"m"}
+  else if(dist.length>1){var pref=ds.filter(function(x){return /\b(date|execut|execution)\b/.test(NL[x.i])}),pd=[];pref.forEach(function(x){if(pd.indexOf(x.d)<0)pd.push(x.d)});
+    if(pd.length===1){f.date=pd[0];c.date="m";notes.push("Plusieurs dates trouvées : celle de l’exécution est proposée.")}else notes.push("Plusieurs dates trouvées : saisissez la bonne.")}
+  /* 6. Devise */
+  var nE=(T.match(/€|\beur\b|\beuros?\b/g)||[]).length,nU=(T.match(/\$|\busd\b/g)||[]).length,nG=(T.match(/£|\bgbp\b/g)||[]).length,nC=(T.match(/\bchf\b/g)||[]).length;
+  var autres=nU+nG+nC;
+  if(nE&&!autres){f.devise="EUR";c.devise="h"}
+  else if(autres&&!nE){f.devise=nU>=nG&&nU>=nC?"USD":nG>=nC?"GBP":"CHF";c.devise="m";notes.push("Devise "+f.devise+" détectée : KYF compte en euros, convertissez les montants avant d’ajouter.")}
+  else if(autres&&nE){c.devise="m";notes.push("Plusieurs devises citées : vérifiez que les montants sont en euros.")}
+  /* 7. Cohérence quantité × prix ≈ montant */
+  if(f.qty&&f.prix&&f.montant){var qp=+f.qty*+f.prix,tt=+f.montant,fr=+f.frais||0,tol=Math.max(0.02,tt*0.005);
+    var okc=Math.abs(qp-tt)<=tol||Math.abs(qp+fr-tt)<=tol||Math.abs(qp-fr-tt)<=tol;
+    if(okc){c.qty=c.prix=c.montant="h"}else{c.qty=c.prix=c.montant="m";notes.push("Quantité × prix ne donne pas le montant : vérifiez ces trois valeurs.")}}
+  return{ok:true,f:f,c:c,notes:notes,ti:ti,tt:ti?(ti.ticker||ti.isin||ti.nom||""):"",tiMod:false}}
+
+/* ===== Import de texte : écran, ouverture du formulaire, partage entrant ===== */
+var PART=null;
+function dcChip(k,id){var t=k==="h"?"sûr":k==="m"?"à vérifier":k==="s"?"saisi":"non trouvé",col=(k==="h"||k==="s")?"--gn":k==="m"?"--acc":"--rd";
+  return `<span class="chip dcc" style="--k:var(${col});padding:2px 8px;font-size:.72rem;align-self:flex-start;width:fit-content">${t}</span>`}
+function docHtml(){
+  var R=S.dr,h="";
+  h+=`<div class="fh"><button class="bk" id="bk" aria-label="Retour">${I.back}</button><div><h2>Importer un texte</h2><small>Copié ou partagé depuis une autre appli</small></div></div>`;
+  h+=`<div class="cd"><label>Texte de l’opération<textarea id="dtx" rows="6" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}</div><small class="hint">Le texte et les images sont lus sur ce téléphone, rien n’est envoyé. Rien n’est conservé après l’ouverture du formulaire. La première lecture d’image télécharge le moteur (environ 10 Mo), ensuite il fonctionne hors ligne.</small>`;
+  if(R&&!R.ok)h+=`<div class="msg err" role="alert">${esc(R.why)}</div>`;
+  if(R&&R.ok){
+    var f=R.f,c=R.c,tit=!f.op||f.op==="achat"||f.op==="vente"||f.op==="dividende",qp=!f.op||f.op==="achat"||f.op==="vente";
+    var OPT=[["","— choisir —"],["achat","Achat"],["vente","Vente"],["dividende","Dividende"],["interets","Intérêts"],["versement","Versement ou dépôt"],["retrait","Retrait"],["rachat","Rachat (assurance vie, PER)"]];
+    function fld(lbl,k,inner){return `<label>${lbl}${dcChip(c[k])}${inner}</label>`}
+    function inp(k,ph){return `<input data-df="${k}" inputmode="decimal" autocomplete="off" placeholder="${ph||""}" value="${esc(f[k])}">`}
+    h+=`<p class="gl">Fiche de vérification</p><div class="cd">`;
+    h+=fld("Opération","op",`<select data-df="op">${OPT.map(function(o){return `<option value="${o[0]}"${f.op===o[0]?" selected":""}>${o[1]}</option>`}).join("")}</select>`);
+    h+=fld("Compte","env",`<select data-df="env"><option value="">— choisir —</option>${ENV.map(function(e){return `<option value="${e}"${f.env===e?" selected":""}>${esc(ENVL[e]||e)}</option>`}).join("")}</select>`);
+    if(tit)h+=fld("Titre","ti",`<input data-dt="1" autocomplete="off" placeholder="Ticker, ISIN ou nom" value="${esc(R.tt)}">`)+(R.ti&&!R.tiMod&&(R.ti.nom||R.ti.isin)?`<small class="hint">${esc(R.ti.nom||"")}${R.ti.nom&&R.ti.isin?" · ":""}${esc(R.ti.isin||"")}</small>`:"");
+    if(qp)h+=fld("Quantité","qty",inp("qty"))+fld("Prix unitaire en euros","prix",inp("prix"));
+    h+=fld("Montant total en euros","montant",inp("montant"));
+    h+=fld("Frais en euros","frais",inp("frais","facultatif"));
+    h+=fld("Date","date",`<input data-df="date" type="date" value="${esc(f.date)}">`)+(f.date?"":`<small class="hint">Non trouvée : la date du jour sera proposée dans le formulaire.</small>`);
+    if(f.devise)h+=`<small class="hint">Devise lue : ${esc(f.devise)}</small>`;
+    h+=`</div>`;
+    R.notes.forEach(function(n){h+=`<p class="hint" style="color:var(--acc)">⚠ ${esc(n)}</p>`});
+    h+=`<div class="cd"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button><small class="hint">Les champs « non trouvé » restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small></div>`}
+  return h}
+function analyserDoc(){
+  var r;try{r=parseDoc(S.dt)}catch(e){r={ok:false,why:"Ce texte n’a pas pu être analysé."}}
+  S.dr=r;return r}
+function ouvrirDoc(){
+  var R=S.dr;if(!R||!R.ok)return;var f=R.f,E=f.env,ty=f.op;
+  function err(m){msg=m;msgOk=false;render()}
+  if(!ty)return err("Choisissez le type d’opération.");
+  if(!E)return err("Choisissez le compte.");
+  var T=dcTypeCompte(E,ty);if(!T)return err("Cette opération n’est pas gérée par l’import pour ce type de compte. Utilisez le menu.");
+  var q=dcNum(f.qty),p=dcNum(f.prix),mt=dcNum(f.montant),fr=String(f.frais||"").trim()===""?"":dcNum(f.frais);
+  if(f.date&&!/^\d{4}-\d{2}-\d{2}$/.test(f.date))return err("Date invalide.");
+  var r={ok:true,type:T,env:E,date:f.date||today()},achatF=T==="achat"||T==="vente"||T==="crypto_achat"||T==="crypto_vente";
+  if(achatF||T==="dividende"){
+    var t=R.ti;
+    if(R.tiMod){var s=String(R.tt||"").trim();if(!s)return err("Indiquez le titre.");var u=s.toUpperCase().replace(/\s/g,"");
+      t=dcIsinOk(u)?(dcTitreIsin(u)||{ticker:"",isin:u,nom:"",inconnu:true}):trouverTitre(nrm(s).split(/[^a-z0-9.]+/).filter(Boolean),E);
+      if(!t)return err("Titre introuvable : saisissez le ticker ou l’ISIN.")}
+    if(!t)return err("Indiquez le titre.");
+    r.ticker=t.ticker||"";r.isin=t.isin||"";r.nom=t.nom||"";r.inconnu=!!t.inconnu}
+  if(T==="dividende"){if(!mt||+mt<=0)return err("Indiquez le montant du dividende.");r.montant=mt}
+  else if(achatF){if(!q||+q<=0)return err("Indiquez la quantité.");r.qty=q;r.prix=(p&&+p>0)?p:""}
+  else{if(!mt||+mt<=0)return err("Indiquez le montant.");r.montant=mt}
+  S.dt="";S.dr=null;
+  ouvrirVoix(r);
+  msg="Pré-rempli depuis le texte importé : vérifiez avant d’ajouter.";msgOk=true;
+  if(fr!=="")S.d.frais=fr;
+  render()}
+/* Partage entrant (Android, appli installée) : le service worker garde le contenu en mémoire,
+   la page le réclame une seule fois. Rien n'est écrit dans le stockage. Tant que le coffre est
+   verrouillé, le texte reste en mémoire dans PART et s'affiche après le déverrouillage. */
+function recevoirPartage(){
+  if(!/[?&]partage=1(&|$)/.test(location.search))return;
+  try{history.replaceState(null,"",location.pathname)}catch(e){}
+  if(!("serviceWorker" in navigator))return;
+  navigator.serviceWorker.ready.then(function(reg){
+    var ctl=navigator.serviceWorker.controller||reg.active;if(!ctl)return;
+    var mc=new MessageChannel(),fin=setTimeout(function(){msg="Le partage n’a pas été reçu. Recommencez, ou collez le texte dans Saisie rapide.";msgOk=false;render()},4000);
+    mc.port1.onmessage=function(ev){clearTimeout(fin);var p=ev.data;
+      if(!p||!p.ok){msg="Le partage n’a pas été reçu. Recommencez, ou collez le texte dans Saisie rapide.";msgOk=false;return render()}
+      var t=String(p.text||p.title||"").trim(),fl=Array.prototype.slice.call(p.files||[],0,3);
+      if(!t&&!fl.length){msg="Le partage ne contenait ni texte ni image.";msgOk=false;return render()}
+      PART={t:t,f:fl,ts:Date.now()};render()};
+    ctl.postMessage({type:"RECLAMER_PARTAGE"},[mc.port2])})}
+
+
+/* ===== Étape 2 : lecture d'une capture d'écran (OCR local, Tesseract.js) =====
+   Le moteur (dossier ocr/) est chargé à la première utilisation seulement, puis gardé par le service worker
+   pour le hors ligne. L'image ne quitte jamais le téléphone et n'est conservée nulle part. */
+var OCRJS=null;
+function ocrCharger(){
+  if(window.Tesseract)return Promise.resolve();
+  if(OCRJS)return OCRJS;
+  OCRJS=new Promise(function(ok,ko){var s=document.createElement("script");s.src="ocr/tesseract.min.js";s.onload=ok;s.onerror=function(){OCRJS=null;ko(new Error("moteur"))};document.head.appendChild(s)});
+  return OCRJS}
+function ocrPreparer(file){
+  return new Promise(function(ok,ko){
+    var u=URL.createObjectURL(file),im=new Image();
+    im.onerror=function(){URL.revokeObjectURL(u);ko(new Error("image"))};
+    im.onload=function(){
+      try{
+        var w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,Math.sqrt(7e6/(w*h)),3200/Math.max(w,h));
+        var cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k)),cv=document.createElement("canvas");cv.width=cw;cv.height=ch;
+        var cx=cv.getContext("2d",{willReadFrequently:true});cx.drawImage(im,0,0,cw,ch);
+        var id=cx.getImageData(0,0,cw,ch),d=id.data,n=cw*ch,i,g=new Uint8Array(n),hist=new Uint32Array(256),sum=0;
+        for(i=0;i<n;i++){var v=Math.round(d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114);g[i]=v;hist[v]++;sum+=v}
+        var lo=0,hi=255,acc=0;for(i=0;i<256;i++){acc+=hist[i];if(acc>=n*0.02){lo=i;break}}
+        acc=0;for(i=255;i>=0;i--){acc+=hist[i];if(acc>=n*0.02){hi=i;break}}
+        if(hi-lo<30){lo=0;hi=255}
+        var inv=sum/n<128,sc=255/(hi-lo);
+        for(i=0;i<n;i++){var x=(g[i]-lo)*sc;x=x<0?0:x>255?255:x;if(inv)x=255-x;d[i*4]=d[i*4+1]=d[i*4+2]=x;d[i*4+3]=255}
+        cx.putImageData(id,0,0);im.src="";URL.revokeObjectURL(u);ok(cv)}
+      catch(e){URL.revokeObjectURL(u);ko(e)}}
+    im.src=u})}
+function majOcr(){var e=$("ocrp");if(e&&S.ocr)e.textContent="Lecture "+(S.ocr.i>1||S.ocr.n>1?"de l’image "+S.ocr.i+" sur "+S.ocr.n+" ":"de l’image ")+": "+S.ocr.p+" %"}
+async function lireImages(files){
+  await ocrCharger();
+  var base=new URL("ocr/",location.href).href,w=await Tesseract.createWorker("fra",1,{workerPath:base+"worker.min.js",corePath:base,langPath:base,gzip:true,cacheMethod:"none",workerBlobURL:false,
+    logger:function(m){if(m&&m.status==="recognizing text"&&S.ocr){S.ocr.p=Math.round((m.progress||0)*100);majOcr()}}}),out=[];
+  try{for(var k=0;k<files.length;k++){if(S.ocr){S.ocr.i=k+1;S.ocr.p=0;majOcr()}
+      var cv=await ocrPreparer(files[k]),r=await w.recognize(cv);out.push(String(r.data.text||"").trim());cv.width=cv.height=1}}
+  finally{try{await w.terminate()}catch(e){}}
+  return out.filter(Boolean).join("\n\n")}
+function lancerOcr(files){
+  files=Array.prototype.slice.call(files||[],0,3).filter(function(f){return f&&/^image\//.test(f.type||"image/")&&f.size<=25e6});
+  if(!files.length){msg="Aucune image exploitable.";msgOk=false;return render()}
+  var tok=S.ocrTok=(S.ocrTok||0)+1;S.ocr={n:files.length,i:1,p:0};S.dr=null;S.v!=="doc"&&go("doc");render();
+  lireImages(files).then(function(t){
+    if(S.ocrTok!==tok)return;S.ocr=null;
+    if(!t){S.dr={ok:false,why:"Aucun texte lisible sur l’image. Essayez une capture plus nette, ou collez le texte."};return render()}
+    S.dt=t.slice(0,6000);analyserDoc();render()
+  }).catch(function(){
+    if(S.ocrTok!==tok)return;S.ocr=null;
+    msg="Lecture de l’image impossible"+(navigator.onLine===false?" : hors ligne, le moteur de lecture doit être téléchargé une première fois en ligne.":".");msgOk=false;render()})}
+
 function ouvrirVoix(r){if(!r||!r.ok)return;var E=r.env,C=comptes().filter(function(c){return c.type===E}),cpt=(ENV.indexOf(E)>-1&&E!=="Crypto"&&C.length===1)?C[0]:null,d={env:E,cpt:cpt,pre:true,type:r.type,date:r.date},nx="montant";
   if(r.type==="achat"||r.type==="vente"||r.type==="crypto_achat"||r.type==="crypto_vente"){d.ticker=r.ticker;d.isin=r.isin;d.nom=r.nom;d.q=r.ticker||r.isin;d.inconnu=r.inconnu;d.qty=r.qty;d.prix=r.prix}
   else if(r.type==="dividende"){d.ticker=r.ticker;d.isin=r.isin;d.nom=r.nom;d.q=r.ticker||r.isin;d.inconnu=r.inconnu;d.qty="1";d.prix=r.montant}
@@ -484,9 +735,10 @@ var TABS=["home","paquet","reglages"];
 function tabbar(v,n,prev){var cur=TABS.indexOf(v);return `<nav class="tb" aria-label="Navigation"><div class="tbi"><span class="tbp" data-cur="${cur}" style="transform:translateX(${prev*100}%)"></span>${[["home","Accueil",I.home],["paquet","Paquets",I.pack],["reglages","Réglages",I.gear]].map(function(t){return `<button data-tab="${t[0]}"${v===t[0]?' aria-current="page"':""}><span class="tbic">${t[2]}${t[0]==="paquet"&&n?`<em class="bd">${n>99?"99+":n}</em>`:""}</span>${t[1]}</button>`}).join("")}</div></nav>`}
 function render(){
   var o=ld(K.ops,[]),v=S.v;
+  if(STATE&&PART){var pp=PART;PART=null;if(Date.now()-pp.ts<300000){S.dt=pp.t||"";S.dfrom="home";S.v=v="doc";if(!pp.t&&pp.f&&pp.f.length){S.dr=null;setTimeout(function(){lancerOcr(pp.f)},0)}else analyserDoc()}}
   if(!STATE&&v!=="phrase"&&v!=="unlock")v=localStorage.getItem(KV)?"unlock":"phrase";
   if(!STATE&&v==="unlock"&&!localStorage.getItem(KV))v="phrase";
-  var flow=v==="voix"||v==="ex"||v==="ops"||v==="cpre"||v==="titre"||v==="compte"||v==="compte_new"||v==="contact"||v==="reg_sec"||v==="reg_aff"||v==="reg_ges"||v==="reg_app"||v==="phrase_chg"||v==="arb"||v==="avp"||v==="actif"||v==="cr"||v==="montant"||v==="confirm",lv0=S.lv,cur=TABS.indexOf(v),prev=(S.ti==null||cur<0)?cur:S.ti,an=v!==lv0?((cur>-1&&TABS.indexOf(lv0)>-1)?"scr sx":"scr"):"";S.lv=v;if(cur>-1)S.ti=cur;
+  var flow=v==="voix"||v==="doc"||v==="ex"||v==="ops"||v==="cpre"||v==="titre"||v==="compte"||v==="compte_new"||v==="contact"||v==="reg_sec"||v==="reg_aff"||v==="reg_ges"||v==="reg_app"||v==="phrase_chg"||v==="arb"||v==="avp"||v==="actif"||v==="cr"||v==="montant"||v==="confirm",lv0=S.lv,cur=TABS.indexOf(v),prev=(S.ti==null||cur<0)?cur:S.ti,an=v!==lv0?((cur>-1&&TABS.indexOf(lv0)>-1)?"scr sx":"scr"):"";S.lv=v;if(cur>-1)S.ti=cur;
   var h=flow?"":logoBar();
   var inl=(v==="phrase"||v==="unlock"||v==="phrase_chg"),hadMsg=!!msg;if(msg&&!inl)h+=msgHtml();
   h+=`<section class="${an}" style="--dx:${cur>prev?18:-18}px">`;
@@ -626,7 +878,10 @@ function render(){
     if(!VON)h+=`<small class="hint">${voixOn()?"La dictée n’est pas disponible dans ce navigateur : utilisez le micro de votre clavier.":"Dictée désactivée : activez-la ci-dessous, ou utilisez le micro de votre clavier pour remplir ce champ."}</small>`;
     if(!voixOn()&&VX_SR)h+=`<button class="p" id="vact" style="margin-top:8px;width:100%">${I.mic} Activer la dictée</button>`;
     if(S.vexo)h+=`<div class="list">${EXS.map(function(x,i){return `<button class="li" data-vx="${i}" style="--k:var(--bl)"><span class="ic">${SV('<path d="M5 12l5 5 9-10"/>')}</span><span><b>${esc(x)}</b><small>Appuyez pour tester</small></span></button>`}).join("")}</div>`;
+    h+=`<div class="list" style="margin-top:12px"><button class="li" id="vdoc" style="--k:var(--bl)"><span class="ic">${I.file}</span><span><b>Importer un texte</b><small>Texte copié ou partagé depuis une autre appli</small></span><span class="ch">${CHEV}</span></button></div>`;
     if(VR)h+=VR.ok?`<div class="cd"><span class="chip" style="--k:var(--gn)">Compris</span><b>${esc(VR.resume)}</b><button class="p" id="vopen">Ouvrir le formulaire pré-rempli</button><small class="hint">Rien n’est ajouté avant votre validation.</small></div>`:`<div class="msg err" role="alert">${esc(VR.why)}</div>`;
+  }else if(v==="doc"){
+    h+=docHtml();
   }else if(v==="phrase_chg"){
     h+=`<div class="fh"><button class="bk" id="bk" aria-label="Retour">${I.back}</button><div><h2>Changer la phrase</h2><small>Re-chiffre tout le coffre</small></div></div><div class="cd">${pwField("f0","Phrase actuelle")}${pwField("f1","Nouvelle phrase (8 caractères minimum)")}${pwField("f2","Confirme la nouvelle phrase")}</div>${msgHtml()}<p class="hint">Pensez à utiliser la même phrase dans KYF sur ordinateur. Les fichiers déjà exportés restent chiffrés avec l’ancienne phrase.</p><div class="cta"><button class="p" id="chok">Changer la phrase</button></div>`;
 }else if(v==="reglages"){
@@ -679,7 +934,7 @@ function libType(t){for(var i=0;i<TYPES.length;i++)if(TYPES[i][0]===t)return TYP
 function $(id){return document.getElementById(id)}
 function lier(o){
   msg="";msgOk=false;
-  var bk=$("bk");if(bk)bk.onclick=function(){go({voix:S.d.vfrom||"home",ops:"home",cpre:S.d.fromOps?"ops":"home",titre:S.d.pre?"ops":"home",compte:AVEC_TITRE.indexOf(S.d.type)>-1?"titre":"home",montant:S.d.pre?(AVEC_TITRE.indexOf(S.d.type)>-1?"titre":"ops"):"compte",compte_new:S.d.fromSet?(S.rb||"reglages"):S.d.pre?"cpre":"compte",contact:S.rb||"reglages",phrase_chg:S.rb||"reglages",reg_sec:"reglages",reg_aff:"reglages",reg_ges:"reglages",reg_app:"reglages",confirm:backConfirm(),arb:S.d.pre?"ops":"compte",avp:S.d.pre?"ops":"compte",actif:S.d.pre?"ops":"home",cr:S.d.pre?"ops":"home",ex:S.d.pre?"ops":"home",paquet:"home",reglages:"home"}[S.v]||"home")};
+  var bk=$("bk");if(bk)bk.onclick=function(){go({doc:S.dfrom||"home",voix:S.d.vfrom||"home",ops:"home",cpre:S.d.fromOps?"ops":"home",titre:S.d.pre?"ops":"home",compte:AVEC_TITRE.indexOf(S.d.type)>-1?"titre":"home",montant:S.d.pre?(AVEC_TITRE.indexOf(S.d.type)>-1?"titre":"ops"):"compte",compte_new:S.d.fromSet?(S.rb||"reglages"):S.d.pre?"cpre":"compte",contact:S.rb||"reglages",phrase_chg:S.rb||"reglages",reg_sec:"reglages",reg_aff:"reglages",reg_ges:"reglages",reg_app:"reglages",confirm:backConfirm(),arb:S.d.pre?"ops":"compte",avp:S.d.pre?"ops":"compte",actif:S.d.pre?"ops":"home",cr:S.d.pre?"ops":"home",ex:S.d.pre?"ops":"home",paquet:"home",reglages:"home"}[S.v]||"home")};
   Array.prototype.forEach.call(app.querySelectorAll("[data-t]"),function(b){b.onclick=function(){var t=b.getAttribute("data-t");if(S.d.pre){S.d={env:S.d.env,cpt:S.d.cpt,pre:true,type:t};go(entreePre(t))}else go(entree(t),{type:t})}});
   Array.prototype.forEach.call(app.querySelectorAll("[data-env]"),function(b){b.onclick=function(){choisirEnv(b.getAttribute("data-env"))}});
   Array.prototype.forEach.call(app.querySelectorAll("[data-cp]"),function(b){b.onclick=function(){var a=comptes().filter(function(c){return c.id===b.getAttribute("data-cp")})[0];if(!a)return;S.d.cpt=a;S.d.fromOps=false;sv(K.lastc,a.id);go("ops")}});
@@ -860,6 +1115,19 @@ function lier(o){
   Array.prototype.forEach.call(app.querySelectorAll("[data-sw4]"),function(b){b.onclick=function(){sv(K.famon,!famOn());render()}});
   if($("vx"))$("vx").onclick=function(){S.d=Object.assign({},S.d,{vfrom:S.v});S.vt="";S.vr=null;S.vexo=false;go("voix")};
   if($("vt"))$("vt").oninput=function(){S.vt=this.value;S.vr=null};
+  if($("vdoc"))$("vdoc").onclick=function(){if($("vt"))S.vt=$("vt").value;S.dfrom="voix";S.dt="";S.dr=null;go("doc")};
+  if($("dtx"))$("dtx").oninput=function(){S.dt=this.value;S.dr=null};
+  if($("dgo"))$("dgo").onclick=function(){if($("dtx"))S.dt=$("dtx").value;analyserDoc();render()};
+  if($("dpaste"))$("dpaste").onclick=function(){
+    if(!navigator.clipboard||!navigator.clipboard.readText){msg="Collage direct indisponible : appuyez longuement dans le champ, puis Coller.";msgOk=false;return render()}
+    navigator.clipboard.readText().then(function(t){S.dt=String(t||"").slice(0,6000);analyserDoc();render()}).catch(function(){msg="Collage refusé : appuyez longuement dans le champ, puis Coller.";msgOk=false;render()})};
+  if($("dopen"))$("dopen").onclick=ouvrirDoc;
+  if($("dimg"))$("dimg").onclick=function(){if($("dfile"))$("dfile").click()};
+  if($("dfile"))$("dfile").onchange=function(){var fs=Array.prototype.slice.call(this.files||[]);this.value="";if(fs.length)lancerOcr(fs)};
+  Array.prototype.forEach.call(app.querySelectorAll("[data-df]"),function(b){var k=b.getAttribute("data-df"),sel=b.tagName==="SELECT";
+    b[sel?"onchange":"oninput"]=function(){if(!S.dr||!S.dr.f)return;S.dr.f[k]=this.value;S.dr.c[k]="s";
+      if(sel)return render();var lb=this.parentNode&&this.parentNode.querySelector(".dcc");if(lb){lb.textContent="saisi";lb.style.setProperty("--k","var(--gn)")}}});
+  Array.prototype.forEach.call(app.querySelectorAll("[data-dt]"),function(b){b.oninput=function(){if(!S.dr)return;S.dr.tt=this.value;S.dr.tiMod=true;S.dr.c.ti="s";var lb=this.parentNode&&this.parentNode.querySelector(".dcc");if(lb){lb.textContent="saisi";lb.style.setProperty("--k","var(--gn)")}}});
   if($("vgo"))$("vgo").onclick=function(){S.vt=$("vt").value;S.vr=parseVoix(S.vt,S.d.env||null);render()};
   if($("vex"))$("vex").onclick=function(){if($("vt"))S.vt=$("vt").value;S.vexo=!S.vexo;render()};
   Array.prototype.forEach.call(app.querySelectorAll("[data-vx]"),function(b){b.onclick=function(){S.vt=vxExemples(S.d.env||null)[+b.getAttribute("data-vx")];S.vr=parseVoix(S.vt,S.d.env||null);S.vexo=false;render()}});
@@ -925,6 +1193,7 @@ function partager(){
   }else{telecharger(f);marquerEnvoi();msg="Partage indisponible, le fichier a été téléchargé.";msgOk=false;render()}
 }
 try{if("serviceWorker" in navigator&&location.protocol==="https:"||location.hostname==="localhost")navigator.serviceWorker.register("sw.js")}catch(e){}
+recevoirPartage();
 render();
 </script>
 </body>
