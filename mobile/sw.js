@@ -1,7 +1,7 @@
-/* Keep Your Folio Mobile 1.8.4.00 : fonctionnement hors ligne.
+/* Keep Your Folio Mobile 1.8.4.01 : fonctionnement hors ligne.
    Ne met en cache que les fichiers de cette appli (même adresse). Les téléchargements vers
    d’autres sites (base publique) et tout le reste ne passent jamais par ce cache. */
-var CACHE="kyfm-1.8.4.00";
+var CACHE="kyfm-1.8.4.01";
 var FICHIERS=["./","index.html","manifest.webmanifest","icon-192.png","icon-512.png","icon-512-maskable.png","apple-touch-icon.png","icon-dark-192.png","icon-mono-512.png"];
 self.addEventListener("install",function(e){e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(FICHIERS)}).then(function(){return self.skipWaiting()}))});
 self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==CACHE}).map(function(k){return caches.delete(k)}))}).then(function(){return self.clients.claim()}))});
@@ -16,6 +16,8 @@ self.addEventListener("message",function(e){
 self.addEventListener("fetch",function(e){
   var r=e.request,u=new URL(r.url);
   if(r.method==="POST"&&u.origin===self.location.origin&&/\/partage-recu$/.test(u.pathname)){
+    var sf=(r.headers.get("sec-fetch-site")||"").toLowerCase(),og=r.headers.get("origin");
+    if(sf==="cross-site"||(og&&og!=="null"&&og!==self.location.origin)){e.respondWith(Response.redirect(new URL("./",self.registration.scope).href,303));return}
     e.respondWith((async function(){
       try{var fd=await r.formData();ATTENTE={t:Date.now(),title:String(fd.get("title")||""),text:String(fd.get("text")||""),files:fd.getAll("images").filter(function(f){return f&&typeof f==="object"&&f.size>0&&/^image\//.test(f.type||"")}).slice(0,3)}}
       catch(err){ATTENTE=null}
