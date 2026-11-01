@@ -68,7 +68,7 @@ label{display:flex;flex-direction:column;gap:6px;color:var(--mut);font-size:.9re
 .gi svg{width:22px;height:22px;stroke-width:1.75}
 .gn{font-style:normal;font-size:.68rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--onacc)}
 .gt:active{transform:scale(.97)}
-.dd{display:inline-flex;align-items:center;gap:5px;color:var(--k);font-size:.7rem;font-weight:600}.dd i{width:7px;height:7px;border-radius:50%;background:var(--k)}
+.dd{display:inline-flex;align-items:center;gap:5px;color:var(--k);font-size:.7rem;font-weight:700}.dd i{width:7px;height:7px;border-radius:50%;background:var(--k)}
 .dsum{display:flex;flex-direction:column;gap:8px}.dsum b{font-size:.95rem}.dsum small{display:block;color:var(--mut);font-size:.78rem;margin-top:2px}
 .dbar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 14%,transparent);overflow:hidden}.dbar i{display:block;height:100%;background:var(--gn)}
 .dg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -78,7 +78,7 @@ label{display:flex;flex-direction:column;gap:6px;color:var(--mut);font-size:.9re
 .df select{appearance:auto}
 .dcta{position:sticky;bottom:0;padding:12px 0 4px;margin-top:4px;background:linear-gradient(180deg,transparent,var(--bg) 30%)}.dcta .p{width:100%;min-height:56px}
 .essai{border:1px dashed color-mix(in srgb,var(--ink) 30%,var(--line));border-radius:12px;padding:0 12px;color:var(--mut);font-size:.82rem}.essai summary{min-height:46px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600}.eb{display:flex;flex-direction:column;gap:10px;padding-bottom:12px}.essai button{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;border-radius:12px;border:1px solid color-mix(in srgb,var(--ink) 20%,var(--line));background:var(--card);color:var(--ink);font-weight:600}
-:root{--wn:color-mix(in srgb,var(--acc) 45%,var(--ink) 55%)}
+:root{--wn:var(--acc)}
 .bioz{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px}.bioz button{width:64px;height:64px;min-height:64px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid color-mix(in srgb,var(--ink) 25%,var(--line));background:var(--card);color:color-mix(in srgb,var(--acc) 72%,var(--ink) 28%)}.bioz svg{width:30px;height:30px;stroke-width:1.75}.bioz small{color:var(--mut);font-size:.78rem}
 .ou{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:.78rem;padding:6px 8px}.ou i{flex:1;height:1px;background:color-mix(in srgb,var(--ink) 25%,var(--line))}
 
@@ -140,14 +140,14 @@ label.li{cursor:pointer;flex-direction:row;color:var(--ink);font-size:1rem;gap:1
 .sum{display:flex;justify-content:space-between;align-items:baseline}.sum b{font-size:1.6rem;letter-spacing:-.02em}
 .seg{display:flex;background:color-mix(in srgb,var(--ink) 9%,transparent);border-radius:14px;padding:4px;gap:4px}
 .seg button{flex:1;min-height:44px;border:0;border-radius:11px;background:none;text-align:center;padding:0 6px}
-.seg.pq button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;white-space:nowrap;min-height:52px;font-size:.82rem}.seg.pq b{color:var(--acc);font-size:.8rem}
+.seg.pq button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;white-space:nowrap;min-height:52px;font-size:.82rem}.seg.pq b{color:var(--acc);font-size:.8rem;font-weight:800}
 .seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.25);font-weight:600}
 .danger{color:var(--err)}
 details.cd summary{cursor:pointer;font-weight:600;min-height:28px}
 .tb{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;padding:0 16px calc(10px + env(safe-area-inset-bottom,0px));pointer-events:none;z-index:20}
 .tbi{pointer-events:auto;display:flex;gap:4px;width:100%;max-width:448px;padding:6px;border-radius:26px;border:1px solid var(--line);background:color-mix(in srgb,var(--card) 86%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 8px 28px rgba(0,0,0,.28)}
 .tbi button{flex:1;min-height:56px;border:0;border-radius:20px;background:none;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.72rem;color:var(--mut);text-align:center}
-.tbi button[aria-current="page"]{color:var(--acc);background:color-mix(in srgb,var(--acc) 15%,transparent);font-weight:600}
+.tbi button[aria-current="page"]{color:var(--acc);background:color-mix(in srgb,var(--acc) 15%,transparent);font-weight:800}
 .tbic{position:relative;display:flex}
 .bd{position:absolute;top:-6px;right:-12px;min-width:18px;height:18px;border-radius:9px;padding:0 5px;background:var(--acc);color:var(--onacc);font:700 .68rem/18px system-ui;text-align:center;font-style:normal}
 label.chk{flex-direction:row;align-items:center;gap:12px;color:var(--ink);font-size:1rem}label.chk input{width:22px;min-height:22px;height:22px;flex:none;accent-color:var(--acc)}
@@ -179,7 +179,7 @@ main{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
 .swr[aria-checked="true"] .trk{background:var(--acc)}.swr[aria-checked="true"] .trk::after{transform:translateX(22px)}
 .fld{display:flex;flex-direction:column;gap:12px}
 textarea#cm{min-height:140px;resize:none;overflow:hidden}
-a.alt{color:var(--acc);text-decoration:none;font-weight:600}
+a.alt{color:var(--acc);text-decoration:none;font-weight:800}
 @media (prefers-reduced-motion:reduce){.trk,.trk::after{transition:none}}
 button{min-height:46px;border-radius:12px}
 button.p{min-height:50px;border-radius:14px;font-size:1rem}
@@ -216,7 +216,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.20", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.21", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -274,7 +274,7 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.20)
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.21)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
@@ -721,7 +721,7 @@ function docHtml(){
     h+=`</div>`;
     if(f.devise)h+=`<small class="hint">Devise lue : ${esc(f.devise)}</small>`;
     if(R.dbl)h+=`<small class="hint">Image lue deux fois (Tesseract et OCR du téléphone) : « sûr » = valeur confirmée par les deux lectures.</small>`;
-    R.notes.forEach(function(n){h+=`<p class="hint" style="color:var(--wn);font-weight:600">⚠ ${esc(n)}</p>`});
+    R.notes.forEach(function(n){h+=`<p class="hint" style="color:var(--acc);font-weight:800">⚠ ${esc(n)}</p>`});
     h+=`<small class="hint">Les champs à compléter restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small>`+essaiH+`<div class="dcta"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button></div>`}
   if(!(R&&R.ok))h+=essaiH;
   return h}
