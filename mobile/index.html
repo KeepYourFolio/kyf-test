@@ -80,7 +80,8 @@ label{display:flex;flex-direction:column;gap:6px;color:var(--mut);font-size:.9re
 .essai{border:1px dashed color-mix(in srgb,var(--ink) 30%,var(--line));border-radius:12px;padding:0 12px;color:var(--mut);font-size:.82rem}.essai summary{min-height:46px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600}.eb{display:flex;flex-direction:column;gap:10px;padding-bottom:12px}.essai button{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;border-radius:12px;border:1px solid color-mix(in srgb,var(--ink) 20%,var(--line));background:var(--card);color:var(--ink);font-weight:600}
 :root{--wn:color-mix(in srgb,var(--acc) 45%,var(--ink) 55%)}
 .bioz{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px}.bioz button{width:64px;height:64px;min-height:64px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid color-mix(in srgb,var(--ink) 25%,var(--line));background:var(--card);color:color-mix(in srgb,var(--acc) 72%,var(--ink) 28%)}.bioz svg{width:30px;height:30px;stroke-width:1.75}.bioz small{color:var(--mut);font-size:.78rem}
-.ou{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:.78rem;padding:6px 8px}.ou i{flex:1;height:1px;background:var(--line)}
+.ou{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:.78rem;padding:6px 8px}.ou i{flex:1;height:1px;background:color-mix(in srgb,var(--ink) 25%,var(--line))}
+#ul:not(.p){min-height:54px;border:1.5px solid color-mix(in srgb,var(--acc) 70%,var(--ink) 30%);background:color-mix(in srgb,var(--acc) 10%,var(--card));font-weight:600}
 .tile{min-height:112px;border-radius:20px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;border:1px solid color-mix(in srgb,var(--k) 38%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--k) 14%,var(--card)),var(--card) 70%)}
 .tile b{font-size:1.2rem;display:block}.tile small{color:var(--mut);font-size:.82rem;font-weight:400}
 .ic{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--k);background:color-mix(in srgb,var(--k) 18%,transparent)}
@@ -214,7 +215,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.17", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.18", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -272,7 +273,7 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.17)
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.18)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
@@ -301,11 +302,11 @@ async function bioActiver(emp){
     await idbPut(k2);rec={v:1,mode:"dev",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct2)}}
   localStorage.setItem(BIO,JSON.stringify(rec))}
 async function bioLire(id,salt){
-  var a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:id}],userVerification:"required",timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
+  var a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:id}],userVerification:"required",hints:["client-device"],timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
   return a.getClientExtensionResults()}
 async function bioOuvrir(){
   var c=JSON.parse(localStorage.getItem(BIO)),key;
-  if(c.mode==="dev"){await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:unb64(c.id)}],userVerification:"required",timeout:60000}});key=await idbGet();if(!key)throw new Error("cle")}
+  if(c.mode==="dev"){await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:unb64(c.id)}],userVerification:"required",hints:["client-device"],timeout:60000}});key=await idbGet();if(!key)throw new Error("cle")}
   else key=await bioCle(await bioLire(unb64(c.id),unb64(c.salt)));
   var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(c.iv)},key,unb64(c.ct));
   await ouvrir(new TextDecoder().decode(pt))}
