@@ -228,7 +228,7 @@ button.p[disabled]{opacity:.5;box-shadow:none}
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.24", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.25", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -274,7 +274,7 @@ async function majBase(){var b=$("maj");b.disabled=true;b.textContent="Télécha
   render()}
 async function dechiffrer(c,ph){var key=await deriveKey(ph,unb64(c.sel),Math.min(c.iter||ITER,2000000));var pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(c.iv)},key,unb64(c.donnees));return JSON.parse(new TextDecoder().decode(pt))}
 async function chargerListe(t){
-  try{var a=JSON.parse(String(t).trim());
+  try{var a=(t&&typeof t==="object")?t:JSON.parse(String(t).trim());
     if(a&&a.format==="kyfliste-chiffre"){if(!PH)throw new Error("verrouillé");a=await dechiffrer(a,PH)}
     var fm=null,cp=null,ac=null,bi=null,pj=null,sc=null;if(a&&!Array.isArray(a)&&typeof a==="object"){fm=a.famille;cp=a.comptes;ac=a.actifs;bi=a.biens;pj=a.projets;sc=a.scpi;a=a.titres}
     if(!Array.isArray(a))throw 0;
@@ -286,7 +286,82 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.24)
+var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToBase64:function(r){if(null==r)return"";var n=i._compress(r,6,function(r){return o.charAt(r)});switch(n.length%4){default:case 0:return n;case 1:return n+"===";case 2:return n+"==";case 3:return n+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(n){return t(o,r.charAt(n))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(r){return null==r?"":""==r?null:i._decompress(r.length,16384,function(o){return r.charCodeAt(o)-32})},compressToUint8Array:function(r){for(var o=i.compress(r),n=new Uint8Array(2*o.length),e=0,t=o.length;e<t;e++){var s=o.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null==o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;e<t;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return n.charAt(r)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(o){return t(n,r.charAt(o))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,s={},u={},a="",p="",c="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<r.length;i+=1)if(a=r.charAt(i),Object.prototype.hasOwnProperty.call(s,a)||(s[a]=f++,u[a]=!0),p=c+a,Object.prototype.hasOwnProperty.call(s,p))c=p;else{if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++),s[p]=f++,c=String(a)}if(""!==c){if(Object.prototype.hasOwnProperty.call(u,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==o-1?(v=0,d.push(n(m)),m=0):v++;for(t=c.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;e<h;e++)m=m<<1|t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}0==--l&&(l=Math.pow(2,h),h++),delete u[c]}else for(t=s[c],e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;0==--l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)m=m<<1|1&t,v==o-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==o-1){d.push(n(m));break}v++}return d.join("")},decompress:function(r){return null==r?"":""==r?null:i._decompress(r.length,32768,function(o){return r.charCodeAt(o)})},_decompress:function(o,n,e){var t,i,s,u,a,p,c,l=[],f=4,h=4,d=3,m="",v=[],g={val:e(0),position:n,index:1};for(t=0;t<3;t+=1)l[t]=t;for(s=0,a=Math.pow(2,2),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;c=r(s);break;case 2:return""}for(l[3]=c,i=c,v.push(c);;){if(g.index>o)return"";for(s=0,a=Math.pow(2,d),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;switch(c=s){case 0:for(s=0,a=Math.pow(2,8),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 1:for(s=0,a=Math.pow(2,16),p=1;p!=a;)u=g.val&g.position,g.position>>=1,0==g.position&&(g.position=n,g.val=e(g.index++)),s|=(u>0?1:0)*p,p<<=1;l[h++]=r(s),c=h-1,f--;break;case 2:return v.join("")}if(0==f&&(f=Math.pow(2,d),d++),l[c])m=l[c];else{if(c!==h)return null;m=i+i.charAt(0)}v.push(m),l[h++]=i+m.charAt(0),i=m,0==--f&&(f=Math.pow(2,d),d++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module?module.exports=LZString:"undefined"!=typeof angular&&null!=angular&&angular.module("LZString",[]).factory("LZString",function(){return LZString});
+/* ===== Connexion Google : récupérer ses comptes depuis le classeur « KYF - Keep Your Folio » (1.7.0.25)
+   Même identifiant OAuth, même page de retour et même service d'échange que KYF PC. Droit demandé : drive.file
+   (uniquement le classeur créé par KYF). Le jeton d'accès reste en mémoire ; le jeton de renouvellement est gardé
+   dans le coffre chiffré. Seuls les NOMS sont conservés (comptes, titres, famille, biens) : jamais un montant. */
+var G_CID="518557394360-u9jl97eorjson88ps76qj2llilujkg35.apps.googleusercontent.com",
+G_PROXY="https://script.google.com/macros/s/AKfycbxk1lor_5YlxVnujpHjQ0bQ1YT7V53to7pvZh715EG960C7SWf4owDhT7YytvAeNONpOw/exec",
+G_REDIR="https://keepyourfolio.fr/oauth/callback.html",G_ORIG="https://keepyourfolio.fr",
+G_SCOPE="email profile https://www.googleapis.com/auth/drive.file",G_SHEET="KYF - Keep Your Folio",
+G_KEYS=["pea-positions","pea-crypto-v1","kyf-etf-transactions","kyf-dividendes","kyf-livrets","kyf-scpi","kyf-immo","kyf-crowdfunding","kyf-autres","kyf-av","kyf-av-positions","kyf-famille","kyf-cto-comptes"],
+GTOK=null,GEXP=0,gBusy=false;
+function gLie(){return !!ld("grefresh",null)}
+function gErr(e){var m=String(e&&e.message||"");
+  if(m==="g:closed")return"Fenêtre Google fermée avant la fin. Réessayez.";
+  if(m==="g:popup")return"Fenêtre bloquée. Autorisez les fenêtres surgissantes pour ce site, puis réessayez.";
+  if(m==="g:drive")return"La permission Google Drive n’a pas été accordée. Recommencez en cochant la case Drive.";
+  if(m==="g:nosheet")return"Classeur « "+G_SHEET+" » introuvable. Connectez-vous avec le compte Google utilisé dans KYF PC et lancez une synchronisation depuis le PC.";
+  if(m.indexOf("g:")===0)return"Connexion Google refusée ("+m.slice(2).slice(0,60)+").";
+  if(e&&e.name==="TimeoutError")return"Google ne répond pas. Réessayez.";
+  return"Synchronisation impossible ("+(m.slice(0,80)||"réseau")+").";}
+async function gProxy(p){var r=await fetch(G_PROXY,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:new URLSearchParams(p).toString(),signal:AbortSignal.timeout(20000)});return r.json()}
+function b64u(u){return b64(u).replace(/\+/g,"-").replace(/\//g,"_").replace(/=/g,"")}
+function gRecu(d){if(!d||!d.access_token)throw new Error("g:"+((d&&(d.error_description||d.error))||"réponse invalide"));
+  if(typeof d.scope==="string"&&d.scope&&!/auth\/drive\.file/.test(d.scope))throw new Error("g:drive");
+  GTOK=d.access_token;GEXP=Date.now()+(d.expires_in||3600)*1000;if(d.refresh_token)sv("grefresh",d.refresh_token)}
+function gConnect(){
+  var w=window.open("","kyf-oauth","width=600,height=650");if(!w)return Promise.reject(new Error("g:popup"));
+  return new Promise(function(ok,ko){
+    var ver=b64u(crypto.getRandomValues(new Uint8Array(32))),st=Array.from(crypto.getRandomValues(new Uint8Array(16)),function(b){return b.toString(16).padStart(2,"0")}).join(""),done=false,iv=null;
+    function h(e){if(e.origin!==G_ORIG||!e.data||e.data.type!=="kyf-oauth-callback")return;removeEventListener("message",h);done=true;clearInterval(iv);try{w.close()}catch(_){}
+      if(e.data.error)return ko(new Error("g:"+String(e.data.error)));if(e.data.state!==st)return ko(new Error("g:état invalide"));
+      gProxy({action:"exchangeCode",code:e.data.code,code_verifier:ver}).then(function(d){gRecu(d);ok()}).catch(ko)}
+    addEventListener("message",h);
+    crypto.subtle.digest("SHA-256",new TextEncoder().encode(ver)).then(function(hh){
+      var q=new URLSearchParams({client_id:G_CID,redirect_uri:G_REDIR,response_type:"code",scope:G_SCOPE,code_challenge:b64u(new Uint8Array(hh)),code_challenge_method:"S256",state:st,access_type:"offline",prompt:"consent"});
+      w.location.href="https://accounts.google.com/o/oauth2/v2/auth?"+q.toString();
+      iv=setInterval(function(){var c=true;try{c=w.closed}catch(_){}if(c){clearInterval(iv);setTimeout(function(){if(!done){removeEventListener("message",h);ko(new Error("g:closed"))}},1500)}},700)}).catch(ko)})}
+async function gRenouv(){var r=ld("grefresh",null);if(!r)return false;
+  try{var d=await gProxy({action:"refreshToken",refresh_token:r});if(!d||!d.access_token)return false;GTOK=d.access_token;GEXP=Date.now()+(d.expires_in||3600)*1000;return true}catch(e){return false}}
+async function gToken(){if(GTOK&&Date.now()<GEXP-60000)return GTOK;if(await gRenouv())return GTOK;await gConnect();return GTOK}
+async function gGet(url,retry){var t=await gToken(),r=await fetch(url,{headers:{Authorization:"Bearer "+t},signal:AbortSignal.timeout(25000)});
+  if(r.status===401&&!retry){GTOK=null;GEXP=0;return gGet(url,true)}if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}
+async function gLire(){
+  var f=await gGet("https://www.googleapis.com/drive/v3/files?q="+encodeURIComponent("name='"+G_SHEET+"' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false")+"&fields=files(id)&spaces=drive");
+  var id=f.files&&f.files[0]&&f.files[0].id;if(!id||!/^[A-Za-z0-9_-]{20,100}$/.test(id))throw new Error("g:nosheet");
+  var d=await gGet("https://sheets.googleapis.com/v4/spreadsheets/"+id+"/values/KYF_Data!A:B"),D={};
+  (d.values||[]).slice(1).forEach(function(row){var k=row&&row[0];if(G_KEYS.indexOf(k)<0||typeof row[1]!=="string")return;
+    var s=row[1];if(s.indexOf("LZS1:")===0){try{s=LZString.decompressFromBase64(s.slice(5))}catch(e){s=null}}
+    if(!s)return;try{D[k]=JSON.parse(s)}catch(e){}});
+  return gListe(D)}
+function gListe(D){
+  function A(k){return Array.isArray(D[k])?D[k]:[]}
+  var seen={},T=[],C=[],envs={};
+  function addT(x){if(!x||typeof x!=="object")return;var t=String(x.ticker||"").trim(),i=String(x.isin||"").trim().toUpperCase(),n=String(x.name||x.nom||"").trim(),k=t||i;if(!k||seen[k])return;seen[k]=1;T.push({ticker:t,isin:i,nom:n})}
+  A("pea-positions").forEach(function(x){addT(x);var e=String(x&&x.enveloppe||"");if(e==="PEA"||e==="PEA-PME"||e==="CTO")envs[e]=1});
+  A("kyf-etf-transactions").forEach(addT);A("kyf-dividendes").forEach(addT);
+  if(!T.length)T=ld(K.tick,[]);
+  if(envs.PEA)C.push({id:"pea",type:"PEA",nom:"PEA"});if(envs["PEA-PME"])C.push({id:"peapme",type:"PEA-PME",nom:"PEA-PME"});
+  var ct=A("kyf-cto-comptes");ct.forEach(function(x){if(x&&typeof x==="object")C.push({id:x.id,type:"CTO",nom:x.nom||"CTO",titulaire:x.titulaire})});
+  if(!ct.length&&envs.CTO)C.push({id:"c1",type:"CTO",nom:"CTO"});
+  A("kyf-livrets").forEach(function(x){if(x&&typeof x==="object")C.push({id:x.id,type:"Livret",nom:String(x.type||"Livret")+(x.banque?" · "+x.banque:""),titulaire:x.titulaire})});
+  var P=D["kyf-av-positions"];
+  function lig(cid){var L=[];if(Array.isArray(P))L=P.filter(function(l){return l&&(l.contratId===cid||l.contractId===cid||l.avId===cid||l.cid===cid||l.contrat===cid)});else if(P&&typeof P==="object"){var v=P[cid];if(Array.isArray(v))L=v;else if(v&&Array.isArray(v.positions))L=v.positions}
+    return L.filter(function(l){return l&&typeof l==="object"}).map(function(l){return{nom:l.nom||l.name||l.libelle,type:l.type,ticker:l.ticker,isin:l.isin}})}
+  A("kyf-av").forEach(function(x){if(!x||typeof x!=="object")return;var ty=String(x.type||"av").toLowerCase(),t=ty==="per"?"PER":ty==="av"?"AV":null;if(!t)return;
+    C.push({id:x.id,type:t,nom:String(x.contratNom||x.assureur||t),titulaire:x.titulaire,lignes:t==="AV"?lig(x.id):[]})});
+  var cr=D["pea-crypto-v1"];if(cr&&Array.isArray(cr.positions)&&cr.positions.length)C.push({id:"crypto",type:"Crypto",nom:"Crypto"});
+  function N(k,f){return A(k).filter(function(x){return x&&typeof x==="object"}).map(function(x){return{id:x.id,nom:f?f(x):x.nom}})}
+  var F=A("kyf-famille").filter(function(m){return m&&typeof m==="object"}).map(function(m){return{id:m.id,prenom:m.prenom}});
+  return{titres:T,famille:F.length?F:null,comptes:C,actifs:A("kyf-autres").filter(function(x){return x&&typeof x==="object"}).map(function(x){return{id:x.id,nom:x.nom,type:x.type}}),
+    biens:N("kyf-immo"),scpi:N("kyf-scpi"),projets:N("kyf-crowdfunding",function(x){return x.nom||x.titre||x.projet})}}
+async function gGo(){if(gBusy)return;gBusy=true;msg="";msgOk=false;var b=$("goo");if(b){b.disabled=true;var s=b.querySelector("b");if(s)s.textContent="Connexion à Google…"}
+  try{var o=await gLire();gBusy=false;await chargerListe(o)}
+  catch(e){gBusy=false;msg=gErr(e);msgOk=false;render()}}
+function gOff(){GTOK=null;GEXP=0;sv("grefresh",null);msg="Déconnecté de Google. Les comptes déjà chargés sont conservés.";msgOk=true;render()}
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.25)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
@@ -342,7 +417,7 @@ var DEFP=null;window.addEventListener("beforeinstallprompt",function(e){e.preven
 function instRow(){var st=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone;if(st)return"";var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
   if(DEFP)return `<button class="li" id="inst" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur l’écran d’accueil</b><small>Ouverture plein écran, comme une appli</small></span><span class="ch">${CHEV}</span></button>`;
   if(ios)return `<div class="li" style="--k:var(--gn)"><span class="ic">${I.dl}</span><span><b>Installer sur iPhone</b><small style="white-space:normal">Bouton Partager, puis « Sur l’écran d’accueil »</small></span></div>`;return""}
-/* ===== Rester déverrouillé à l'actualisation (1.7.0.24)
+/* ===== Rester déverrouillé à l'actualisation (1.7.0.25)
    Pendant le délai de verrouillage automatique, la clé du coffre (non exportable) et la phrase chiffrée par une autre clé non
    exportable sont gardées dans IndexedDB. Tout est effacé au verrouillage, à l'effacement du coffre ou à l'expiration. */
 var SESSP="kyfm-sess-on",sessT=0;
@@ -363,7 +438,7 @@ async function sessRestore(){
       ph=await crypto.subtle.decrypt({name:"AES-GCM",iv:r.iv},r.k,r.ct);
     STATE=JSON.parse(new TextDecoder().decode(pt));KEY=r.key;SELB=r.sel;PH=new TextDecoder().decode(ph);sessT=0;sessTouch()
   }catch(e){STATE=null;KEY=null;PH=null;SELB=null;sessClear()}}
-function verrouiller(){sessClear();PART=null;STATE=null;KEY=null;PH=null;SELB=null;S={v:"home",d:{}};render()}
+function verrouiller(){GTOK=null;GEXP=0;sessClear();PART=null;STATE=null;KEY=null;PH=null;SELB=null;S={v:"home",d:{}};render()}
 function ancien(){var o={};[K.ops,K.tick,K.last,K.frais,K.fam,K.pour].forEach(function(k){try{var x=localStorage.getItem(k);if(x)o[k]=JSON.parse(x)}catch(e){}});return o}
 function effacerAncien(){[K.ops,K.tick,K.last,K.frais,K.fam,K.pour,K.phrase].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}})}
 function effacer(){bioOff();sessClear();try{localStorage.removeItem(KV)}catch(e){}effacerAncien();STATE=null;KEY=null;PH=null;SELB=null}
@@ -1083,6 +1158,7 @@ function render(){
   }else if(v==="reg_ges"){
     var C=comptes();
     h+=regHead("Gestion","Réglages");
+    h+=`<p class="gl">Google · KYF</p><div class="list"><button class="li" id="goo" style="--k:var(--acc)"><span class="ic">${I.refresh}</span><span><b>${gLie()?"Actualiser depuis KYF (Google)":"Récupérer mes comptes depuis KYF (Google)"}</b><small style="white-space:normal">Lit le classeur « KYF - Keep Your Folio » : comptes, titres, famille, biens. Seuls les noms sont gardés, jamais les montants.</small></span></button>${gLie()?`<button class="li" id="goff" style="--k:var(--mut)"><span class="ic">${LOCK}</span><span><b>Se déconnecter de Google</b><small>Les comptes déjà chargés restent</small></span></button>`:""}</div>`;
     h+=`<p class="gl">Titres</p><div class="list"><button class="li" id="maj" style="--k:var(--bl)"><span class="ic">${I.refresh}</span><span><b>Mettre à jour la liste de titres</b><small style="white-space:normal">${esc(baseInfo())}</small></span></button><label class="li" style="--k:var(--pu)"><span class="ic">${I.file}</span><span><b>Charger ma liste KYF</b><small>${ld(K.tick,[]).length} titres · ${fam().length} personnes · ${comptes().filter(function(c){return c.kyf}).length} contrats · ${actifs().filter(function(x){return x.kyf}).length} biens</small></span><input id="lt" type="file" hidden accept=".json,.kyfliste,application/json"></label></div><details class="cd"><summary>Coller un texte copié depuis KYF</summary><textarea id="cp" rows="3" autocomplete="off" aria-label="Texte copié depuis KYF"></textarea><button id="cpb">Charger le texte collé</button></details>`;
     h+=`<p class="gl">Mes comptes</p><div class="list">${C.map(function(c,i){return `<div class="li" style="--k:var(--acc)"><span class="ic">${esc(c.type.slice(0,2))}</span><span><b>${esc(c.nom)}</b><small>${esc(c.type)}${c.titulaire?" · "+esc(nomFam(c.titulaire)):""}${c.lignes&&c.lignes.length?" · "+c.lignes.length+" lignes":""}${c.kyf?" · venu de KYF":""}</small></span>${c.kyf?"":`<button class="x" data-delc="${i}" aria-label="Supprimer ce compte" style="min-height:40px;width:40px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;color:var(--mut)">${I.trash}</button>`}</div>`}).join("")}<button class="li" id="addc" style="--k:var(--gn)"><span class="ic">${SV('<path d="M12 5v14M5 12h14"/>')}</span><span><b>Ajouter un compte</b><small>Plusieurs PEA, CTO ou assurances vie, pour vous ou votre famille</small></span></button></div>`;
     h+=`<p class="gl">Famille</p><div class="cd"><button class="swr" role="switch" data-sw4="fam" aria-checked="${famOn()?"true":"false"}"><span><b>Plusieurs personnes</b><small>Rattacher les opérations à vous, votre conjoint, vos enfants…</small></span><span class="trk"></span></button></div>`;
@@ -1362,7 +1438,7 @@ function lier(o){
   if($("oub"))$("oub").onclick=function(){if(confirm("Effacer tout le coffre de cet appareil ? Les opérations non envoyées seront perdues.")){effacer();verrouiller()}};
   if($("lt"))$("lt").onchange=function(){var f=this.files[0];if(f)f.text().then(chargerListe)};
   if($("cpb"))$("cpb").onclick=function(){chargerListe($("cp").value)};
-  if($("maj"))$("maj").onclick=majBase;
+  if($("maj"))$("maj").onclick=majBase;if($("goo"))$("goo").onclick=gGo;if($("goff"))$("goff").onclick=gOff;
   if($("env"))$("env").onclick=envoyer;
   if($("shr"))$("shr").onclick=partager;
   if($("dl"))$("dl").onclick=function(){telecharger(S.file);marquerEnvoi()};
