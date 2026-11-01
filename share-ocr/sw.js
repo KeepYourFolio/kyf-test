@@ -1,0 +1,35 @@
+/* Test OCR : le contenu partagé reste en mémoire du service worker, jamais en cache, jamais envoyé au réseau. */
+var CACHE = "kyf-test-ocr-1";
+var FICHIERS = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
+var ATTENTE = null, DUREE_MAX = 120000;
+self.addEventListener("install", function (e) {
+  e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FICHIERS); }).then(function () { return self.skipWaiting(); }));
+});
+self.addEventListener("activate", function (e) {
+  e.waitUntil(caches.keys().then(function (ks) { return Promise.all(ks.filter(function (k) { return k !== CACHE; }).map(function (k) { return caches.delete(k); })); }).then(function () { return self.clients.claim(); }));
+});
+self.addEventListener("message", function (e) {
+  if (!e.data || e.data.type !== "RECLAMER_PARTAGE" || !e.ports || !e.ports[0]) return;
+  var p = ATTENTE; ATTENTE = null;
+  if (p && Date.now() - p.t > DUREE_MAX) p = null;
+  e.ports[0].postMessage(p ? { ok: true, files: p.files } : { ok: false });
+});
+self.addEventListener("fetch", function (e) {
+  var r = e.request, u = new URL(r.url);
+  if (r.method === "POST" && u.origin === self.location.origin && /\/partage-recu$/.test(u.pathname)) {
+    e.respondWith((async function () {
+      try {
+        var fd = await r.formData();
+        ATTENTE = { t: Date.now(), files: fd.getAll("images").filter(function (f) { return f && typeof f === "object" && f.size > 0 && /^image\//.test(f.type || ""); }).slice(0, 3) };
+      } catch (err) { ATTENTE = null; }
+      return Response.redirect(new URL("./?partage=1", self.registration.scope).href, 303);
+    })());
+    return;
+  }
+  if (r.method !== "GET" || u.origin !== self.location.origin) return;
+  if (u.search.indexOf("partage=") > -1) { e.respondWith(fetch(r).catch(function () { return caches.match("index.html"); })); return; }
+  e.respondWith(fetch(r).then(function (rep) {
+    if (rep && rep.ok) { var copie = rep.clone(); caches.open(CACHE).then(function (c) { c.put(r, copie); }); }
+    return rep;
+  }).catch(function () { return caches.match(r).then(function (m) { return m || caches.match("index.html"); }); }));
+});

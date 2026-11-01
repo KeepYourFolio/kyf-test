@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a1f2e">
+<title>KYF Test OCR</title>
+<style>
+body{margin:0;background:#1a1f2e;color:#eef;font:15px/1.45 system-ui,sans-serif;padding:16px}
+h1{font-size:18px;margin:0 0 12px}
+.c{background:#252b3d;border-radius:12px;padding:12px;margin:0 0 12px}
+.ok{color:#6fd98a}.ko{color:#ff8a8a}.m{color:#aab}.w{color:#f0c060}
+textarea{width:100%;box-sizing:border-box;min-height:220px;background:#10141f;color:#eef;border:1px solid #3a4260;border-radius:8px;padding:8px;font:13px/1.4 ui-monospace,monospace}
+img{max-width:100%;max-height:220px;border-radius:8px;margin-top:8px}
+button,label.b{display:inline-block;background:#3b6cff;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:15px;margin:4px 6px 4px 0}
+button[disabled]{opacity:.45}
+</style></head><body>
+<h1>KYF Test OCR</h1>
+<div class="c" id="etat">…</div>
+<div class="c">
+  <label class="b">Choisir une image<input id="fi" type="file" accept="image/*" hidden></label>
+  <span class="m">ou partagez une capture vers « Test OCR »</span>
+  <div id="vign"></div>
+  <div><button id="b1" disabled>OCR du téléphone (TextDetector)</button><button id="b2" disabled>Tesseract (KYF Mobile)</button></div>
+</div>
+<div class="c"><b>OCR du téléphone</b> <span id="t1" class="m"></span><textarea id="r1" readonly></textarea></div>
+<div class="c"><b>Tesseract</b> <span id="t2" class="m"></span><textarea id="r2" readonly></textarea></div>
+<button id="eff">Effacer</button>
+<script>
+var $=function(i){return document.getElementById(i)};
+function ligne(t,c){return '<div class="'+c+'">'+(c==="ok"?"✔ ":c==="ko"?"✖ ":"• ")+t+'</div>'}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var IMG=null,URLS=[];
+function ocrFond(g,w,h,r){
+  var n=w*h,t=new Float32Array(n),o=new Float32Array(n),hf=r>>1,q=2*hf+1,x,y,s,j,a,d;
+  for(y=0;y<h;y++){var b=y*w;s=0;for(j=-hf;j<=hf;j++)s+=g[b+(j<0?0:j>=w?w-1:j)];
+    for(x=0;x<w;x++){t[b+x]=s/q;a=x+hf+1;d=x-hf;s+=g[b+(a>=w?w-1:a)]-g[b+(d<0?0:d)]}}
+  for(x=0;x<w;x++){s=0;for(j=-hf;j<=hf;j++)s+=t[(j<0?0:j>=h?h-1:j)*w+x];
+    for(y=0;y<h;y++){o[y*w+x]=s/q;a=y+hf+1;d=y-hf;s+=t[(a>=h?h-1:a)*w+x]-t[(d<0?0:d)*w+x]}}
+  return o}
+function ocrPreparer(file){
+  return new Promise(function(ok,ko){
+    var u=URL.createObjectURL(file),im=new Image();
+    im.onerror=function(){URL.revokeObjectURL(u);ko(new Error("image"))};
+    im.onload=function(){
+      try{
+        var w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,Math.sqrt(7e6/(w*h)),3200/Math.max(w,h));
+        var cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k)),cv=document.createElement("canvas");cv.width=cw;cv.height=ch;
+        var cx=cv.getContext("2d",{willReadFrequently:true});cx.drawImage(im,0,0,cw,ch);
+        var id=cx.getImageData(0,0,cw,ch),d=id.data,n=cw*ch,i,g=new Float32Array(n);
+        for(i=0;i<n;i++)g[i]=d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114;
+        var m=ocrFond(g,cw,ch,(Math.max(21,Math.round(cw*0.045)))|1);
+        for(i=0;i<n;i++){var x=255-Math.abs(g[i]-m[i])*2;x=x<0?0:x>255?255:x;d[i*4]=d[i*4+1]=d[i*4+2]=x;d[i*4+3]=255}
+        cx.putImageData(id,0,0);im.src="";URL.revokeObjectURL(u);ok(cv)}
+      catch(e){URL.revokeObjectURL(u);ko(e)}}
+    im.src=u})}
+
+/* --- OCR du téléphone : Shape Detection API (TextDetector) --- */
+async function ocrTel(){
+  var t0=performance.now(),bmp=await createImageBitmap(IMG),det=new TextDetector(),res=await det.detect(bmp),ms=Math.round(performance.now()-t0);
+  var bl=res.map(function(r){var b=r.boundingBox;return{x:b.x,y:b.y,h:b.height,t:r.rawValue}}).sort(function(a,b){return a.y-b.y||a.x-b.x});
+  var lignes=[],cur=null;
+  bl.forEach(function(b){if(cur&&Math.abs(b.y-cur.y)<Math.max(6,cur.h*0.6)){cur.p.push(b)}else{cur={y:b.y,h:b.h,p:[b]};lignes.push(cur)}});
+  var txt=lignes.map(function(l){return l.p.sort(function(a,b){return a.x-b.x}).map(function(p){return p.t}).join(" ")}).join("\n");
+  return{txt:txt,ms:ms,n:res.length}}
+/* --- Tesseract (moteur de KYF Mobile, même dossier ocr/) --- */
+async function ocrTess(){
+  var t0=performance.now();
+  if(!window.Tesseract)await new Promise(function(ok,ko){var s=document.createElement("script");s.src="../mobile/ocr/tesseract.min.js";s.onload=ok;s.onerror=function(){ko(new Error("moteur introuvable (../mobile/ocr/)"))};document.head.appendChild(s)});
+  var base=new URL("../mobile/ocr/",location.href).href,w=await Tesseract.createWorker("fra",1,{workerPath:base+"worker.min.js",corePath:base,langPath:base,gzip:true,cacheMethod:"none",workerBlobURL:false});
+  try{var cv=await ocrPreparer(IMG),r=await w.recognize(cv);return{txt:String(r.data.text||"").trim(),ms:Math.round(performance.now()-t0)}}finally{try{await w.terminate()}catch(e){}}}
+function setImg(f){
+  URLS.forEach(function(u){URL.revokeObjectURL(u)});URLS=[];IMG=f;
+  var u=URL.createObjectURL(f);URLS.push(u);$("vign").innerHTML='<div class="m">'+esc(f.type||"?")+' · '+Math.round(f.size/1024)+' Ko</div><img src="'+u+'" alt="">';
+  $("b2").disabled=false;if(DET)$("b1").disabled=false;$("r1").value="";$("r2").value="";$("t1").textContent="";$("t2").textContent=""}
+var DET=false;
+$("fi").onchange=function(){if(this.files[0])setImg(this.files[0]);this.value=""};
+$("b1").onclick=async function(){this.disabled=true;$("t1").textContent="lecture…";try{var r=await ocrTel();$("r1").value=r.txt;$("t1").textContent=r.ms+" ms · "+r.n+" blocs"}catch(e){$("t1").textContent="erreur : "+(e&&e.name||"")+" "+(e&&e.message||"")}this.disabled=false};
+$("b2").onclick=async function(){this.disabled=true;$("t2").textContent="lecture…";try{var r=await ocrTess();$("r2").value=r.txt;$("t2").textContent=r.ms+" ms"}catch(e){$("t2").textContent="erreur : "+(e&&e.message||e)}this.disabled=false};
+$("eff").onclick=function(){URLS.forEach(function(u){URL.revokeObjectURL(u)});URLS=[];IMG=null;$("vign").innerHTML="";$("r1").value=$("r2").value="";$("t1").textContent=$("t2").textContent="";$("b1").disabled=$("b2").disabled=true};
+async function init(){
+  var h="",sa=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  h+=ligne("Appli installée (mode autonome)",sa?"ok":"w");
+  h+=ligne("Navigateur : "+esc((navigator.userAgent.match(/(Chrome|Firefox|SamsungBrowser|Brave)\/[\d.]+/)||["inconnu"])[0]),"m");
+  if("TextDetector" in window){
+    try{var cv=document.createElement("canvas");cv.width=cv.height=32;await new TextDetector().detect(cv);DET=true;h+=ligne("TextDetector (OCR du téléphone) disponible","ok")}
+    catch(e){h+=ligne("TextDetector présent mais refuse de lire : "+esc((e&&e.name||"")+" "+(e&&e.message||"")),"ko")}}
+  else h+=ligne("TextDetector absent de ce navigateur","ko")+'<div class="m">Pour l\'essayer : ouvrez chrome://flags, activez « Experimental Web Platform features », redémarrez Chrome, puis rouvrez cette appli.</div>';
+  if("serviceWorker" in navigator){try{await navigator.serviceWorker.register("sw.js");var reg=await navigator.serviceWorker.ready;h+=ligne("Service worker actif","ok")}catch(e){h+=ligne("Service worker indisponible","ko")}}
+  $("etat").innerHTML=h;
+  if(!/[?&]partage=1/.test(location.search))return;
+  history.replaceState(null,"",location.pathname);
+  var ctl=navigator.serviceWorker.controller||(await navigator.serviceWorker.ready).active;
+  var rep=await new Promise(function(res){var mc=new MessageChannel(),fin=setTimeout(function(){res({ok:false})},4000);mc.port1.onmessage=function(ev){clearTimeout(fin);res(ev.data)};ctl.postMessage({type:"RECLAMER_PARTAGE"},[mc.port2])});
+  if(!rep.ok||!rep.files||!rep.files.length){$("etat").innerHTML+=ligne("Partage non reçu","ko");return}
+  $("etat").innerHTML+=ligne("Image reçue par le partage","ok");setImg(rep.files[0]);
+  if(DET)$("b1").click()}
+init();
+</script></body></html>
