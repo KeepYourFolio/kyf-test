@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a1f2e">
+<title>KYF Test Partage</title>
+<style>
+body{margin:0;background:#1a1f2e;color:#eef;font:15px/1.45 system-ui,sans-serif;padding:16px}
+h1{font-size:18px;margin:0 0 12px}
+.c{background:#252b3d;border-radius:12px;padding:12px;margin:0 0 12px}
+.ok{color:#6fd98a}.ko{color:#ff8a8a}.m{color:#aab}
+textarea{width:100%;box-sizing:border-box;min-height:120px;background:#10141f;color:#eef;border:1px solid #3a4260;border-radius:8px;padding:8px}
+img{max-width:100%;border-radius:8px;margin-top:8px}
+button{background:#3b6cff;color:#fff;border:0;border-radius:8px;padding:10px 14px;font-size:15px}
+</style></head><body>
+<h1>KYF Test Partage</h1>
+<div class="c" id="etat">…</div>
+<div class="c" id="recu"><span class="m">Rien reçu. Partagez un texte ou une capture vers cette appli.</span></div>
+<button id="eff" hidden>Effacer</button>
+<script>
+var $=function(i){return document.getElementById(i)};
+function ligne(t,ok){return '<div class="'+(ok?'ok':'ko')+'">'+(ok?'✔ ':'✖ ')+t+'</div>'}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var urlsObjet=[];
+function effacer(){urlsObjet.forEach(function(u){URL.revokeObjectURL(u)});urlsObjet=[];$("recu").innerHTML='<span class="m">Effacé.</span>';$("eff").hidden=true}
+$("eff").onclick=effacer;
+async function init(){
+  var h="";
+  var standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  h+=ligne("Appli installée (mode autonome)",standalone);
+  h+=ligne("Connexion HTTPS",location.protocol==="https:");
+  if(!("serviceWorker" in navigator)){h+=ligne("Service worker non pris en charge",false);$("etat").innerHTML=h;return}
+  try{await navigator.serviceWorker.register("sw.js")}catch(e){h+=ligne("Enregistrement du service worker",false)}
+  var reg=await navigator.serviceWorker.ready;
+  h+=ligne("Service worker actif",!!reg.active);
+  h+=ligne("Page contrôlée par le service worker",!!navigator.serviceWorker.controller);
+  $("etat").innerHTML=h;
+  if(!/[?&]partage=1/.test(location.search))return;
+  history.replaceState(null,"",location.pathname);   /* retire ?partage=1 de la barre d'adresse */
+  var ctl=navigator.serviceWorker.controller||reg.active;
+  var rep=await new Promise(function(res){
+    var mc=new MessageChannel(),fin=setTimeout(function(){res({ok:false,timeout:true})},4000);
+    mc.port1.onmessage=function(ev){clearTimeout(fin);res(ev.data)};
+    ctl.postMessage({type:"RECLAMER_PARTAGE"},[mc.port2])
+  });
+  if(!rep.ok){$("recu").innerHTML=ligne("Partage non reçu"+(rep.timeout?" (pas de réponse du service worker)":" (rien en attente : service worker redémarré ou POST non intercepté)"),false);return}
+  var o=ligne("Partage reçu par le service worker en "+rep.delai+" ms",true);
+  o+='<div class="m">Titre : '+(rep.title?esc(rep.title):"(vide)")+'<br>Champ url : '+(rep.url?esc(rep.url):"(vide)")+'<br>Texte : '+(rep.text?rep.text.length+" caractères":"(vide)")+'<br>Fichiers : '+rep.files.length+'</div>';
+  if(rep.text)o+='<textarea readonly>'+esc(rep.text)+'</textarea>';
+  rep.files.forEach(function(f){var u=URL.createObjectURL(f);urlsObjet.push(u);o+='<div class="m">'+esc(f.type||"?")+' · '+Math.round(f.size/1024)+' Ko</div><img src="'+u+'" alt="">'});
+  $("recu").innerHTML=o;$("eff").hidden=false;
+}
+init();
+</script></body></html>
