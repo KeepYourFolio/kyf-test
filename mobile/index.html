@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.08", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.09", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -625,58 +625,65 @@ async function lireNatif(file){
 
 /* ===== Import de texte : écran, ouverture du formulaire, partage entrant ===== */
 var PART=null;
-function dcChip(k,id){var t=k==="h"?"sûr":k==="m"?"à vérifier":k==="s"?"saisi":"non trouvé",col=(k==="h"||k==="s")?"--gn":k==="m"?"--acc":"--rd";
+function dcChip(k,id){var t=k==="h"?"sûr":k==="m"?"à vérifier":k==="s"?"saisi":"à compléter",col=(k==="h"||k==="s")?"--gn":k==="m"?"--acc":"--mut";
   return `<span class="chip dcc" style="--k:var(${col});padding:2px 8px;font-size:.72rem;align-self:flex-start;width:fit-content">${t}</span>`}
 function docHtml(){
   var R=S.dr,h="";
   h+=`<div class="fh"><button class="bk" id="bk" aria-label="Retour">${I.back}</button><div><h2>Importer un texte</h2><small>Copié ou partagé depuis une autre appli</small></div></div>`;
-  h+=`<div class="cd"><label>Texte de l’opération<textarea id="dtx" rows="6" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}${"TextDetector" in window?"":`<small class="hint">Astuce Chrome : activez « Experimental Web Platform features » dans chrome://flags pour une double lecture avec l’OCR du téléphone.</small>`}</div><small class="hint">Le texte et les images sont lus sur ce téléphone, rien n’est envoyé. Rien n’est conservé après l’ouverture du formulaire. La première lecture d’image télécharge le moteur (environ 10 Mo), ensuite il fonctionne hors ligne.</small>`;
+  h+=`<div class="cd"><label>Texte de l’opération<textarea id="dtx" rows="6" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}</div>`;
+  if(!R&&!S.ocr)h+=`<div class="cd"><small class="hint"><b>Exemple de ce qu’on peut copier</b> (dans l’appli de votre banque ou courtier, appui long sur le texte, puis Copier) :<br>Achat · Amundi PEA S&amp;P 500 · 3 parts · 59,70 € · Total 179,10 € · 30/09/2026</small><small class="hint">Même incomplet, ça marche : ce qui est lu est pré-rempli, vous complétez le reste.</small></div>`;
+  h+=`<small class="hint">Le texte est lu sur ce téléphone, rien n’est envoyé ni conservé après l’ouverture du formulaire.</small>`;
+  h+=`<details class="cd"><summary>Essai : lire une capture d’écran</summary><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><small class="hint">Fonction d’essai : la lecture d’image est moins fiable que le texte copié. La première fois, le moteur se télécharge (environ 10 Mo), ensuite il fonctionne hors ligne.</small></details>`;
   if(R&&!R.ok)h+=`<div class="msg err" role="alert">${esc(R.why)}</div>`;
   if(R&&R.ok){
     var f=R.f,c=R.c,tit=!f.op||f.op==="achat"||f.op==="vente"||f.op==="dividende",qp=!f.op||f.op==="achat"||f.op==="vente";
     var OPT=[["","— choisir —"],["achat","Achat"],["vente","Vente"],["dividende","Dividende"],["interets","Intérêts"],["versement","Versement ou dépôt"],["retrait","Retrait"],["rachat","Rachat (assurance vie, PER)"]];
     function fld(lbl,k,inner){return `<label>${lbl}${dcChip(c[k])}${inner}</label>`}
     function inp(k,ph){return `<input data-df="${k}" inputmode="decimal" autocomplete="off" placeholder="${ph||""}" value="${esc(f[k])}">`}
-    h+=`<p class="gl">Fiche de vérification</p><div class="cd">`;
+    var KS=["op","env"].concat(tit?["ti"]:[],qp?["qty","prix"]:[],["montant","date"]),nl=KS.filter(function(k){var x=c[k];return x==="h"||x==="m"||x==="s"}).length;
+    h+=`<p class="gl">Fiche de vérification</p><p class="hint" style="color:var(--gn)">J’ai lu ${nl} champ${nl>1?"s":""} sur ${KS.length}${nl<KS.length?" : complétez les autres, ou ouvrez le formulaire et complétez-les là-bas.":"."}</p><div class="cd">`;
     h+=fld("Opération","op",`<select data-df="op">${OPT.map(function(o){return `<option value="${o[0]}"${f.op===o[0]?" selected":""}>${o[1]}</option>`}).join("")}</select>`);
     h+=fld("Compte","env",`<select data-df="env"><option value="">— choisir —</option>${ENV.map(function(e){return `<option value="${e}"${f.env===e?" selected":""}>${esc(ENVL[e]||e)}</option>`}).join("")}</select>`);
     if(tit)h+=fld("Titre","ti",`<input data-dt="1" autocomplete="off" placeholder="Ticker, ISIN ou nom" value="${esc(R.tt)}">`)+(R.ti&&!R.tiMod&&(R.ti.nom||R.ti.isin)?`<small class="hint">${esc(R.ti.nom||"")}${R.ti.nom&&R.ti.isin?" · ":""}${esc(R.ti.isin||"")}</small>`:"");
     if(qp)h+=fld("Quantité","qty",inp("qty"))+fld("Prix unitaire en euros","prix",inp("prix"));
     h+=fld("Montant total en euros","montant",inp("montant"));
-    h+=fld("Frais en euros","frais",inp("frais","facultatif"));
-    h+=fld("Date","date",`<input data-df="date" type="date" value="${esc(f.date)}">`)+(f.date?"":`<small class="hint">Non trouvée : la date du jour sera proposée dans le formulaire.</small>`);
+    h+=(f.frais!==""&&f.frais!=null?fld("Frais en euros","frais",inp("frais","facultatif")):`<label>Frais en euros<input data-df="frais" inputmode="decimal" autocomplete="off" placeholder="facultatif" value=""></label>`);
+    h+=fld("Date","date",`<input data-df="date" type="date" value="${esc(f.date)}">`)+(f.date?"":`<small class="hint">Pas de date lue : celle du jour sera proposée.</small>`);
     if(f.devise)h+=`<small class="hint">Devise lue : ${esc(f.devise)}</small>`;
     h+=`</div>`;
     if(R.dbl)h+=`<small class="hint">Image lue deux fois (Tesseract et OCR du téléphone) : « sûr » = valeur confirmée par les deux lectures.</small>`;
     R.notes.forEach(function(n){h+=`<p class="hint" style="color:var(--acc)">⚠ ${esc(n)}</p>`});
-    h+=`<div class="cd"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button><small class="hint">Les champs « non trouvé » restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small></div>`}
+    h+=`<div class="cd"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button><small class="hint">Les champs à compléter restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small></div>`}
   return h}
+function autoColler(){try{if(!navigator.clipboard||!navigator.clipboard.readText)return;
+  navigator.clipboard.readText().then(function(t){t=String(t||"").trim();if(S.v!=="doc"||S.dt||!t||t.length<8)return;S.dt=t.slice(0,6000);S.dtn="";analyserDoc();render()}).catch(function(){})}catch(e){}}
 function analyserDoc(){
   var r;try{r=parseDoc(S.dt);if(S.dtn)r=dcCroise(r,S.dtn)}catch(e){r={ok:false,why:"Ce texte n’a pas pu être analysé."}}
   S.dr=r;return r}
 function ouvrirDoc(){
-  var R=S.dr;if(!R||!R.ok)return;var f=R.f,E=f.env,ty=f.op;
-  function err(m){msg=m;msgOk=false;render()}
-  if(!ty)return err("Choisissez le type d’opération.");
-  if(!E)return err("Choisissez le compte.");
-  var T=dcTypeCompte(E,ty);if(!T)return err("Cette opération n’est pas gérée par l’import pour ce type de compte. Utilisez le menu.");
-  var q=dcNum(f.qty),p=dcNum(f.prix),mt=dcNum(f.montant),fr=String(f.frais||"").trim()===""?"":dcNum(f.frais);
-  if(f.date&&!/^\d{4}-\d{2}-\d{2}$/.test(f.date))return err("Date invalide.");
-  var r={ok:true,type:T,env:E,date:f.date||today()},achatF=T==="achat"||T==="vente"||T==="crypto_achat"||T==="crypto_vente";
+  var R=S.dr;if(!R||!R.ok)return;var f=R.f,E=f.env,ty=f.op,def=[];
+  if(f.date&&!/^\d{4}-\d{2}-\d{2}$/.test(f.date)){f.date=""}
+  if(!E){var cs=comptes();E=(cs[0]&&cs[0].type)||"PEA";def.push("compte")}
+  var T=ty?dcTypeCompte(E,ty):null;
+  var q=dcNum(f.qty),p=dcNum(f.prix),mt=dcNum(f.montant),fr=String(f.frais||"").trim()===""?"":dcNum(f.frais),dt=f.date||today();
+  var done="Pré-rempli avec ce qui a été lu : vérifiez et complétez avant d’ajouter.";
+  var C=comptes().filter(function(c){return c.type===E}),cpt=(ENV.indexOf(E)>-1&&E!=="Crypto"&&C.length===1)?C[0]:null;
+  if(!T){S.dt="";S.dtn="";S.dr=null;S.d={env:E,pre:true,cpt:cpt,date:dt};msg=ty?"Cette opération n’est pas gérée par l’import pour ce compte : choisissez-la ci-dessous.":"Type d’opération non lu : choisissez-le ci-dessous.";msgOk=false;return go("ops")}
+  var r={ok:true,type:T,env:E,date:dt},achatF=T==="achat"||T==="vente"||T==="crypto_achat"||T==="crypto_vente";
+  var manque=false;
   if(achatF||T==="dividende"){
     var t=R.ti;
-    if(R.tiMod){var s=String(R.tt||"").trim();if(!s)return err("Indiquez le titre.");var u=s.toUpperCase().replace(/\s/g,"");
-      t=dcIsinOk(u)?(dcTitreIsin(u)||{ticker:"",isin:u,nom:"",inconnu:true}):trouverTitre(nrm(s).split(/[^a-z0-9.]+/).filter(Boolean),E);
-      if(!t)return err("Titre introuvable : saisissez le ticker ou l’ISIN.")}
-    if(!t)return err("Indiquez le titre.");
-    if(!(t.ticker||t.isin))return err("Titre absent de votre liste : saisissez son ticker ou son ISIN dans le champ Titre.");
+    if(R.tiMod){var s2=String(R.tt||"").trim();if(s2){var u=s2.toUpperCase().replace(/\s/g,"");
+      t=dcIsinOk(u)?(dcTitreIsin(u)||{ticker:"",isin:u,nom:"",inconnu:true}):trouverTitre(nrm(s2).split(/[^a-z0-9.]+/).filter(Boolean),E)}else t=null}
+    if(!t||!(t.ticker||t.isin)){manque=true;t={ticker:"",isin:"",nom:"",inconnu:false}}
     r.ticker=t.ticker||"";r.isin=t.isin||"";r.nom=t.nom||"";r.inconnu=!!t.inconnu}
-  if(T==="dividende"){if(!mt||+mt<=0)return err("Indiquez le montant du dividende.");r.montant=mt}
-  else if(achatF){if(!q||+q<=0)return err("Indiquez la quantité.");r.qty=q;r.prix=(p&&+p>0)?p:""}
-  else{if(!mt||+mt<=0)return err("Indiquez le montant.");r.montant=mt}
+  if(T==="dividende"){r.montant=(mt&&+mt>0)?mt:""}
+  else if(achatF){r.qty=(q&&+q>0)?q:"";r.prix=(p&&+p>0)?p:""}
+  else r.montant=(mt&&+mt>0)?mt:"";
   S.dt="";S.dtn="";S.dr=null;
+  if(manque){S.d={env:E,pre:true,cpt:cpt,type:T,date:dt,qty:r.qty,prix:r.prix,mt:r.montant,q:String(R.tt||"").trim()};if(fr!=="")S.d.frais=fr;msg="Titre non lu : indiquez-le, le reste est déjà pré-rempli.";msgOk=false;return go("titre")}
   ouvrirVoix(r);
-  msg="Pré-rempli depuis le texte importé : vérifiez avant d’ajouter.";msgOk=true;
+  msg=done+(def.length?" Compte choisi par défaut : vérifiez-le.":"");msgOk=true;
   if(fr!=="")S.d.frais=fr;
   render()}
 /* Partage entrant (Android, appli installée) : le service worker garde le contenu en mémoire,
@@ -1182,7 +1189,7 @@ function lier(o){
   Array.prototype.forEach.call(app.querySelectorAll("[data-sw4]"),function(b){b.onclick=function(){sv(K.famon,!famOn());render()}});
   if($("vx"))$("vx").onclick=function(){S.d=Object.assign({},S.d,{vfrom:S.v});S.vt="";S.vr=null;S.vexo=false;go("voix")};
   if($("vt"))$("vt").oninput=function(){S.vt=this.value;S.vr=null};
-  if($("vdoc"))$("vdoc").onclick=function(){if($("vt"))S.vt=$("vt").value;S.dfrom="voix";S.dt="";S.dtn="";S.dr=null;go("doc")};
+  if($("vdoc"))$("vdoc").onclick=function(){if($("vt"))S.vt=$("vt").value;S.dfrom="voix";S.dt="";S.dtn="";S.dr=null;go("doc");autoColler()};
   if($("dtx"))$("dtx").oninput=function(){S.dt=this.value;S.dr=null};
   if($("dgo"))$("dgo").onclick=function(){if($("dtx"))S.dt=$("dtx").value;analyserDoc();render()};
   if($("dpaste"))$("dpaste").onclick=function(){
