@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.05", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.07", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -455,6 +455,7 @@ function dcNum(s){s=String(s||"").replace(/[  \s]/g,"");if(!/^\d[\d.,]*$/.tes
   if(lc>-1&&ld>-1){s=s.slice(0,dec).replace(/[.,]/g,"")+"."+s.slice(dec+1)}
   else if(dec>-1){var p=s.split(s.charAt(dec));s=p.length>2?s.replace(/[.,]/g,""):p[0]+"."+p[1]}
   s=s.replace(/\.$/,"");var n=Number(s);return isFinite(n)?s:""}
+function dcTrim(s){s=String(s||"");return /\.\d{3,}$/.test(s)?s.replace(/(\.\d{2}\d*?)0+$/,"$1"):s}
 function dcNums(str){var out=[],m,re=/\d{1,3}(?:[   ]\d{3})+(?:[.,]\d+)?|\d+(?:[.,]\d+)*/g;
   while((m=re.exec(str))){var v=dcNum(m[0]);if(v!=="")out.push(v)}return out}
 function dcDateIso(y,m,d){y=+y;m=+m;d=+d;if(y<100)y+=2000;if(m<1||m>12||d<1||d>31)return"";
@@ -493,12 +494,13 @@ function parseDoc(txt){
   if(ops.length===1){f.op=ops[0];c.op="h"}else if(ops.length>1)notes.push("Plusieurs types d’opération reconnus ("+ops.join(", ")+") : choisissez le bon.");
   if(f.op==="swap")return{ok:false,why:"Les échanges (swap) ne sont pas gérés par l’import de texte. Utilisez le menu Crypto > Échange."};
   /* 2. Compte */
-  var envs=[];
-  if(/\bpea[ -]?pme\b/.test(T))envs.push("PEA-PME");else if(/\bpea\b/.test(T))envs.push("PEA");
-  if(/\bcto\b|compte[ -]titres?/.test(T))envs.push("CTO");
-  if(/assurance[ -]vie|\bav\b/.test(T))envs.push("AV");
-  if(/\bper\b/.test(T))envs.push("PER");
-  if(/\blivret\b|\bldds\b|\blep\b|\bldd\b/.test(T))envs.push("Livret");
+  /* le nom d'un fonds peut contenir « PEA » : les lignes qui nomment un fonds ne servent pas à trouver le compte */
+  var TE=NL.filter(function(l){return!/\b(etf|ucits|sicav|fcp|opcvm)\b/.test(l)}).join("\n"),envs=[];
+  if(/\bpea[ -]?pme\b/.test(TE))envs.push("PEA-PME");else if(/\bpea\b/.test(TE))envs.push("PEA");
+  if(/\bcto\b|compte[ -]titres?/.test(TE))envs.push("CTO");
+  if(/assurance[ -]vie|\bav\b/.test(TE))envs.push("AV");
+  if(/\bper\b/.test(TE))envs.push("PER");
+  if(/\blivret\b|\bldds\b|\blep\b|\bldd\b/.test(TE))envs.push("Livret");
   var cryp=/\b(bitcoin|btc|ethereum|eth|solana|ripple|xrp|cardano|crypto)\b/.test(T);
   if(envs.length===1){f.env=envs[0];c.env="h"}else if(envs.length>1)notes.push("Plusieurs comptes cités : choisissez le bon.");
   /* 3. ISIN, titre */
@@ -516,13 +518,16 @@ function parseDoc(txt){
   }else{
     var cr=null;
     if(cryp||f.env==="Crypto"){var mc=/\b(bitcoin|btc|ethereum|ether|eth|solana|sol|ripple|xrp|cardano|ada)\b/.exec(T);if(mc&&VX_CRY[mc[1]]){cr=VX_CRY[mc[1]];ti={ticker:cr,isin:"",nom:cr,inconnu:false};c.ti="m";if(!f.env){f.env="Crypto";c.env="m"}}}
-    if(!ti){var L=sources(),hits={},nh=0,x;
-      for(x=0;x<L.length;x++){var tk=nrm(L[x].ticker||"").split(".")[0],nm=nrm(L[x].nom||""),hit=false;
-        if(nm.length>=5&&(" "+Tn.replace(/[^a-z0-9]+/g," ")+" ").indexOf(" "+nm.replace(/[^a-z0-9]+/g," ").trim()+" ")>-1)hit=true;
+    if(!ti){var L=sources(),hits={},nh=0,x,TC=Tn.replace(/[^a-z0-9]/g,""),tl=[];
+      NL.forEach(function(l,k){var lc=l.replace(/[^a-z0-9]/g,"");if(lc.length>=10&&/\b(etf|ucits|sicav|fcp|opcvm|trust|plc)\b/.test(l)&&!/\bisin\b/.test(l))tl.push({c:lc,i:k})});
+      for(x=0;x<L.length;x++){var tk=nrm(L[x].ticker||"").split(".")[0],nm=nrm(L[x].nom||""),nc=nm.replace(/[^a-z0-9]/g,""),hit=false;
+        if(nc.length>=8&&TC.indexOf(nc)>-1)hit=true;
+        else if(nc.length>=10&&tl.some(function(t){return nc.indexOf(t.c.slice(0,Math.min(t.c.length,40)))>-1}))hit=true;
         else if(tk.length>=3&&!VX_STOP[tk]&&new RegExp("(^|[^a-z0-9])"+tk.replace(/[^a-z0-9]/g,"")+"($|[^a-z0-9])").test(Tn))hit=true;
         if(hit){var key=(L[x].isin||L[x].ticker||nm);if(!hits[key]){hits[key]=L[x];nh++}}}
       if(nh===1){var h1=hits[Object.keys(hits)[0]];ti={ticker:h1.ticker||"",isin:h1.isin||"",nom:h1.nom||"",inconnu:false};c.ti="m"}
-      else if(nh>1)notes.push("Plusieurs titres de votre liste correspondent : saisissez le titre.")}}
+      else if(nh>1)notes.push("Plusieurs titres de votre liste correspondent : saisissez le titre.");
+      else if(tl.length){ti={ticker:"",isin:"",nom:OL[tl[0].i].replace(/\s+\d[\d .,]*\s*(?:€|eur)?\s*$/i,"").trim(),inconnu:true};c.ti="m";notes.push("Titre absent de votre liste : saisissez son ticker ou son ISIN dans le champ Titre.")}}}
   /* 4. Frais, montant, quantité, prix */
   var REF=/\b(frais|commissions?|fees?|courtage)\b/;
   var rf=dcCherche(NL,ML,REF);if(rf){f.frais=rf.v;c.frais=rf.mem?"h":"m"}
@@ -532,6 +537,7 @@ function parseDoc(txt){
   if(rq&&+rq.v>0){f.qty=rq.v;c.qty=rq.mem?"h":"m"}
   var rp=dcCherche(NL,ML,/\b(prix(?: unitaire| d execution| moyen)?|cours(?: d execution)?|price|valeur liquidative)\b/,REF);
   if(rp&&+rp.v>0){f.prix=rp.v;c.prix=rp.mem?"h":"m"}
+  if(!f.prix)for(i=0;i<ML.length;i++){var ex=/\bexecut\w*\s*\(\s*(\d[\d .,]*\d)\s*\)/.exec(ML[i]);if(ex){var ev=dcNum(ex[1]);if(+ev>0){f.prix=ev;c.prix="m";break}}}
   for(i=0;i<ML.length&&(!f.qty||!f.prix);i++){
     var qx=/(\d+(?:[.,]\d+)?)\s*[x×*]\s*(\d+(?:[.,]\d+)?)/.exec(ML[i]);
     if(qx){var a=dcNum(qx[1]),b=dcNum(qx[2]);if(a&&b){if(!f.qty){f.qty=a;c.qty="m"}if(!f.prix){f.prix=b;c.prix="m"}}}}
@@ -541,7 +547,7 @@ function parseDoc(txt){
   if(!f.prix&&f.qty)for(i=0;i<ML.length;i++){
     var mp=/\ba\s+(\d+(?:[ .,]\d+)*)\s*(?:€|eur\b|euros?\b)/.exec(ML[i]);
     if(mp){var pv=dcNums(mp[1])[0];if(+pv>0){f.prix=pv;c.prix="m";break}}}
-  if(!f.montant){var eu=[],re2=/(\d+(?:[ .,]\d+)*)\s*(?:€|eur\b|euros?\b)/g,seenA={};
+  if(!f.montant&&!f.qty&&f.op!=="achat"&&f.op!=="vente"){var eu=[],re2=/(\d+(?:[ .,]\d+)*)\s*(?:€|eur\b|euros?\b)/g,seenA={};
     ML.forEach(function(l){var m2;re2.lastIndex=0;while((m2=re2.exec(l))){var v2=dcNums(m2[1])[0];if(v2&&+v2>0&&!seenA[v2]){seenA[v2]=1;eu.push(v2)}}});
     if(eu.length===1&&eu[0]!==f.prix){f.montant=eu[0];c.montant="m"}}
   /* 5. Date */
@@ -565,7 +571,44 @@ function parseDoc(txt){
   if(f.qty&&f.prix&&f.montant){var qp=+f.qty*+f.prix,tt=+f.montant,fr=+f.frais||0,tol=Math.max(0.02,tt*0.005);
     var okc=Math.abs(qp-tt)<=tol||Math.abs(qp+fr-tt)<=tol||Math.abs(qp-fr-tt)<=tol;
     if(okc){c.qty=c.prix=c.montant="h"}else{c.qty=c.prix=c.montant="m";notes.push("Quantité × prix ne donne pas le montant : vérifiez ces trois valeurs.")}}
+  ["prix","montant","frais"].forEach(function(k){f[k]=dcTrim(f[k])});
   return{ok:true,f:f,c:c,notes:notes,ti:ti,tt:ti?(ti.ticker||ti.isin||ti.nom||""):"",tiMod:false}}
+
+/* ===== Double lecture : OCR du téléphone (TextDetector, si Chrome le propose) + Tesseract =====
+   Tesseract garde la structure des lignes (libellé et valeur côte à côte) ; l'OCR du téléphone lit plus sûrement
+   les caractères. Une valeur lue à l'identique par les deux est « sûre » ; une valeur que le téléphone ne retrouve pas
+   est « à vérifier ». Rien ne quitte le téléphone. */
+function dcCroise(r,nt){
+  if(!r||!r.ok||!nt)return r;
+  var nat=null;try{nat=parseDoc(nt)}catch(e){}
+  var nums={},isins={};
+  String(nt).split("\n").forEach(function(l){l=nrm(l).replace(/['’]/g," ");
+    (l.match(/\b[a-z]{2}[a-z0-9]{9}\d\b/g)||[]).forEach(function(x){isins[x.toUpperCase()]=1});
+    var m=dcBlanc(l,DC_ISIN);DC_DATES.forEach(function(re){m=dcBlanc(m,re)});m=dcBlanc(m,/\d{1,2}:\d{2}(?::\d{2})?/g);
+    dcNums(m).forEach(function(v){nums[Number(v)]=1})});
+  var f=r.f,c=r.c,notes=r.notes,NOM={op:"l’opération",env:"le compte",qty:"la quantité",prix:"le prix",montant:"le montant",frais:"les frais",date:"la date"},ok=nat&&nat.ok,k;
+  ["qty","prix","montant","frais"].forEach(function(k){
+    if(f[k]===""||f[k]==null)return;
+    if(nums[Number(f[k])])c[k]="h";
+    else{c[k]="m";notes.push("L’OCR du téléphone ne retrouve pas "+NOM[k]+" ("+f[k]+") : vérifiez-la.")}});
+  if(ok){
+    ["op","env","qty","prix","montant","frais","date"].forEach(function(k){
+      var a=f[k],b=nat.f[k];
+      if(!b)return;
+      if(!a){f[k]=b;c[k]="m";notes.push("Seul l’OCR du téléphone a lu "+NOM[k]+" : vérifiez-la.")}
+      else if(k==="op"||k==="env"||k==="date"){if(a===b){if(c[k]!=="h")c[k]="h"}else{c[k]="m";notes.push("Les deux lectures diffèrent pour "+NOM[k]+" ("+a+" / "+b+") : vérifiez-la.")}}});
+    if(r.ti&&nat.ti&&((r.ti.isin&&r.ti.isin===nat.ti.isin)||(r.ti.ticker&&r.ti.ticker===nat.ti.ticker)))c.ti="h";
+    if(!r.ti&&nat.ti){r.ti=nat.ti;r.tt=nat.ti.ticker||nat.ti.isin||nat.ti.nom||"";c.ti="m";notes.push("Seul l’OCR du téléphone a reconnu le titre : vérifiez-le.")}}
+  if(r.ti&&r.ti.isin&&Object.keys(isins).length&&!isins[String(r.ti.isin).toUpperCase()]){c.ti="m";notes.push("L’OCR du téléphone ne retrouve pas l’ISIN "+r.ti.isin+" : vérifiez-le.")}
+  r.dbl=true;return r}
+async function lireNatif(file){
+  if(!("TextDetector" in window))return"";
+  try{
+    var bmp=await createImageBitmap(file),res=await new TextDetector().detect(bmp);try{bmp.close()}catch(e){}
+    var bl=res.map(function(x){var b=x.boundingBox;return{x:b.x,y:b.y,h:b.height,t:String(x.rawValue||"")}}).sort(function(a,b){return a.y-b.y||a.x-b.x}),li=[],cur=null;
+    bl.forEach(function(b){if(cur&&Math.abs(b.y-cur.y)<Math.max(6,cur.h*0.6))cur.p.push(b);else{cur={y:b.y,h:b.h,p:[b]};li.push(cur)}});
+    return li.map(function(l){return l.p.sort(function(a,b){return a.x-b.x}).map(function(p){return p.t}).join(" ")}).join("\n")}
+  catch(e){return""}}
 
 /* ===== Import de texte : écran, ouverture du formulaire, partage entrant ===== */
 var PART=null;
@@ -574,7 +617,7 @@ function dcChip(k,id){var t=k==="h"?"sûr":k==="m"?"à vérifier":k==="s"?"saisi
 function docHtml(){
   var R=S.dr,h="";
   h+=`<div class="fh"><button class="bk" id="bk" aria-label="Retour">${I.back}</button><div><h2>Importer un texte</h2><small>Copié ou partagé depuis une autre appli</small></div></div>`;
-  h+=`<div class="cd"><label>Texte de l’opération<textarea id="dtx" rows="6" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}</div><small class="hint">Le texte et les images sont lus sur ce téléphone, rien n’est envoyé. Rien n’est conservé après l’ouverture du formulaire. La première lecture d’image télécharge le moteur (environ 10 Mo), ensuite il fonctionne hors ligne.</small>`;
+  h+=`<div class="cd"><label>Texte de l’opération<textarea id="dtx" rows="6" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}${"TextDetector" in window?"":`<small class="hint">Astuce Chrome : activez « Experimental Web Platform features » dans chrome://flags pour une double lecture avec l’OCR du téléphone.</small>`}</div><small class="hint">Le texte et les images sont lus sur ce téléphone, rien n’est envoyé. Rien n’est conservé après l’ouverture du formulaire. La première lecture d’image télécharge le moteur (environ 10 Mo), ensuite il fonctionne hors ligne.</small>`;
   if(R&&!R.ok)h+=`<div class="msg err" role="alert">${esc(R.why)}</div>`;
   if(R&&R.ok){
     var f=R.f,c=R.c,tit=!f.op||f.op==="achat"||f.op==="vente"||f.op==="dividende",qp=!f.op||f.op==="achat"||f.op==="vente";
@@ -591,11 +634,12 @@ function docHtml(){
     h+=fld("Date","date",`<input data-df="date" type="date" value="${esc(f.date)}">`)+(f.date?"":`<small class="hint">Non trouvée : la date du jour sera proposée dans le formulaire.</small>`);
     if(f.devise)h+=`<small class="hint">Devise lue : ${esc(f.devise)}</small>`;
     h+=`</div>`;
+    if(R.dbl)h+=`<small class="hint">Image lue deux fois (Tesseract et OCR du téléphone) : « sûr » = valeur confirmée par les deux lectures.</small>`;
     R.notes.forEach(function(n){h+=`<p class="hint" style="color:var(--acc)">⚠ ${esc(n)}</p>`});
     h+=`<div class="cd"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button><small class="hint">Les champs « non trouvé » restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small></div>`}
   return h}
 function analyserDoc(){
-  var r;try{r=parseDoc(S.dt)}catch(e){r={ok:false,why:"Ce texte n’a pas pu être analysé."}}
+  var r;try{r=parseDoc(S.dt);if(S.dtn)r=dcCroise(r,S.dtn)}catch(e){r={ok:false,why:"Ce texte n’a pas pu être analysé."}}
   S.dr=r;return r}
 function ouvrirDoc(){
   var R=S.dr;if(!R||!R.ok)return;var f=R.f,E=f.env,ty=f.op;
@@ -612,11 +656,12 @@ function ouvrirDoc(){
       t=dcIsinOk(u)?(dcTitreIsin(u)||{ticker:"",isin:u,nom:"",inconnu:true}):trouverTitre(nrm(s).split(/[^a-z0-9.]+/).filter(Boolean),E);
       if(!t)return err("Titre introuvable : saisissez le ticker ou l’ISIN.")}
     if(!t)return err("Indiquez le titre.");
+    if(!(t.ticker||t.isin))return err("Titre absent de votre liste : saisissez son ticker ou son ISIN dans le champ Titre.");
     r.ticker=t.ticker||"";r.isin=t.isin||"";r.nom=t.nom||"";r.inconnu=!!t.inconnu}
   if(T==="dividende"){if(!mt||+mt<=0)return err("Indiquez le montant du dividende.");r.montant=mt}
   else if(achatF){if(!q||+q<=0)return err("Indiquez la quantité.");r.qty=q;r.prix=(p&&+p>0)?p:""}
   else{if(!mt||+mt<=0)return err("Indiquez le montant.");r.montant=mt}
-  S.dt="";S.dr=null;
+  S.dt="";S.dtn="";S.dr=null;
   ouvrirVoix(r);
   msg="Pré-rempli depuis le texte importé : vérifiez avant d’ajouter.";msgOk=true;
   if(fr!=="")S.d.frais=fr;
@@ -648,6 +693,15 @@ function ocrCharger(){
   if(OCRJS)return OCRJS;
   OCRJS=new Promise(function(ok,ko){var s=document.createElement("script");s.src="ocr/tesseract.min.js";s.onload=ok;s.onerror=function(){OCRJS=null;ko(new Error("moteur"))};document.head.appendChild(s)});
   return OCRJS}
+/* Prétraitement : on garde l'écart entre chaque point et le fond local (texte sombre sur blanc, quelle que soit
+   la couleur du fond ou le thème clair / sombre). Les bandeaux colorés et les lignes sur fond vert ou gris sont lus. */
+function ocrFond(g,w,h,r){
+  var n=w*h,t=new Float32Array(n),o=new Float32Array(n),hf=r>>1,q=2*hf+1,x,y,s,j,a,d;
+  for(y=0;y<h;y++){var b=y*w;s=0;for(j=-hf;j<=hf;j++)s+=g[b+(j<0?0:j>=w?w-1:j)];
+    for(x=0;x<w;x++){t[b+x]=s/q;a=x+hf+1;d=x-hf;s+=g[b+(a>=w?w-1:a)]-g[b+(d<0?0:d)]}}
+  for(x=0;x<w;x++){s=0;for(j=-hf;j<=hf;j++)s+=t[(j<0?0:j>=h?h-1:j)*w+x];
+    for(y=0;y<h;y++){o[y*w+x]=s/q;a=y+hf+1;d=y-hf;s+=t[(a>=h?h-1:a)*w+x]-t[(d<0?0:d)*w+x]}}
+  return o}
 function ocrPreparer(file){
   return new Promise(function(ok,ko){
     var u=URL.createObjectURL(file),im=new Image();
@@ -657,13 +711,10 @@ function ocrPreparer(file){
         var w=im.naturalWidth,h=im.naturalHeight,k=Math.min(1,Math.sqrt(7e6/(w*h)),3200/Math.max(w,h));
         var cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k)),cv=document.createElement("canvas");cv.width=cw;cv.height=ch;
         var cx=cv.getContext("2d",{willReadFrequently:true});cx.drawImage(im,0,0,cw,ch);
-        var id=cx.getImageData(0,0,cw,ch),d=id.data,n=cw*ch,i,g=new Uint8Array(n),hist=new Uint32Array(256),sum=0;
-        for(i=0;i<n;i++){var v=Math.round(d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114);g[i]=v;hist[v]++;sum+=v}
-        var lo=0,hi=255,acc=0;for(i=0;i<256;i++){acc+=hist[i];if(acc>=n*0.02){lo=i;break}}
-        acc=0;for(i=255;i>=0;i--){acc+=hist[i];if(acc>=n*0.02){hi=i;break}}
-        if(hi-lo<30){lo=0;hi=255}
-        var inv=sum/n<128,sc=255/(hi-lo);
-        for(i=0;i<n;i++){var x=(g[i]-lo)*sc;x=x<0?0:x>255?255:x;if(inv)x=255-x;d[i*4]=d[i*4+1]=d[i*4+2]=x;d[i*4+3]=255}
+        var id=cx.getImageData(0,0,cw,ch),d=id.data,n=cw*ch,i,g=new Float32Array(n);
+        for(i=0;i<n;i++)g[i]=d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114;
+        var m=ocrFond(g,cw,ch,(Math.max(21,Math.round(cw*0.045)))|1);
+        for(i=0;i<n;i++){var x=255-Math.abs(g[i]-m[i])*2;x=x<0?0:x>255?255:x;d[i*4]=d[i*4+1]=d[i*4+2]=x;d[i*4+3]=255}
         cx.putImageData(id,0,0);im.src="";URL.revokeObjectURL(u);ok(cv)}
       catch(e){URL.revokeObjectURL(u);ko(e)}}
     im.src=u})}
@@ -672,18 +723,20 @@ async function lireImages(files){
   await ocrCharger();
   var base=new URL("ocr/",location.href).href,w=await Tesseract.createWorker("fra",1,{workerPath:base+"worker.min.js",corePath:base,langPath:base,gzip:true,cacheMethod:"none",workerBlobURL:false,
     logger:function(m){if(m&&m.status==="recognizing text"&&S.ocr){S.ocr.p=Math.round((m.progress||0)*100);majOcr()}}}),out=[];
+  var nat=[];
   try{for(var k=0;k<files.length;k++){if(S.ocr){S.ocr.i=k+1;S.ocr.p=0;majOcr()}
+      nat.push(await lireNatif(files[k]));
       var cv=await ocrPreparer(files[k]),r=await w.recognize(cv);out.push(String(r.data.text||"").trim());cv.width=cv.height=1}}
   finally{try{await w.terminate()}catch(e){}}
-  return out.filter(Boolean).join("\n\n")}
+  return{t:out.filter(Boolean).join("\n\n"),n:nat.filter(Boolean).join("\n\n")}}
 function lancerOcr(files){
   files=Array.prototype.slice.call(files||[],0,3).filter(function(f){return f&&/^image\//.test(f.type||"image/")&&f.size<=25e6});
   if(!files.length){msg="Aucune image exploitable.";msgOk=false;return render()}
   var tok=S.ocrTok=(S.ocrTok||0)+1;S.ocr={n:files.length,i:1,p:0};S.dr=null;S.v!=="doc"&&go("doc");render();
-  lireImages(files).then(function(t){
-    if(S.ocrTok!==tok)return;S.ocr=null;
+  lireImages(files).then(function(R){
+    if(S.ocrTok!==tok)return;S.ocr=null;var t=R.t||R.n;
     if(!t){S.dr={ok:false,why:"Aucun texte lisible sur l’image. Essayez une capture plus nette, ou collez le texte."};return render()}
-    S.dt=t.slice(0,6000);analyserDoc();render()
+    S.dt=t.slice(0,6000);S.dtn=R.t?R.n:"";analyserDoc();render()
   }).catch(function(){
     if(S.ocrTok!==tok)return;S.ocr=null;
     msg="Lecture de l’image impossible"+(navigator.onLine===false?" : hors ligne, le moteur de lecture doit être téléchargé une première fois en ligne.":".");msgOk=false;render()})}
@@ -735,7 +788,7 @@ var TABS=["home","paquet","reglages"];
 function tabbar(v,n,prev){var cur=TABS.indexOf(v);return `<nav class="tb" aria-label="Navigation"><div class="tbi"><span class="tbp" data-cur="${cur}" style="transform:translateX(${prev*100}%)"></span>${[["home","Accueil",I.home],["paquet","Paquets",I.pack],["reglages","Réglages",I.gear]].map(function(t){return `<button data-tab="${t[0]}"${v===t[0]?' aria-current="page"':""}><span class="tbic">${t[2]}${t[0]==="paquet"&&n?`<em class="bd">${n>99?"99+":n}</em>`:""}</span>${t[1]}</button>`}).join("")}</div></nav>`}
 function render(){
   var o=ld(K.ops,[]),v=S.v;
-  if(STATE&&PART){var pp=PART;PART=null;if(Date.now()-pp.ts<300000){S.dt=pp.t||"";S.dfrom="home";S.v=v="doc";if(!pp.t&&pp.f&&pp.f.length){S.dr=null;setTimeout(function(){lancerOcr(pp.f)},0)}else analyserDoc()}}
+  if(STATE&&PART){var pp=PART;PART=null;if(Date.now()-pp.ts<300000){S.dt=pp.t||"";S.dtn="";S.dfrom="home";S.v=v="doc";if(!pp.t&&pp.f&&pp.f.length){S.dr=null;setTimeout(function(){lancerOcr(pp.f)},0)}else analyserDoc()}}
   if(!STATE&&v!=="phrase"&&v!=="unlock")v=localStorage.getItem(KV)?"unlock":"phrase";
   if(!STATE&&v==="unlock"&&!localStorage.getItem(KV))v="phrase";
   var flow=v==="voix"||v==="doc"||v==="ex"||v==="ops"||v==="cpre"||v==="titre"||v==="compte"||v==="compte_new"||v==="contact"||v==="reg_sec"||v==="reg_aff"||v==="reg_ges"||v==="reg_app"||v==="phrase_chg"||v==="arb"||v==="avp"||v==="actif"||v==="cr"||v==="montant"||v==="confirm",lv0=S.lv,cur=TABS.indexOf(v),prev=(S.ti==null||cur<0)?cur:S.ti,an=v!==lv0?((cur>-1&&TABS.indexOf(lv0)>-1)?"scr sx":"scr"):"";S.lv=v;if(cur>-1)S.ti=cur;
@@ -1115,12 +1168,12 @@ function lier(o){
   Array.prototype.forEach.call(app.querySelectorAll("[data-sw4]"),function(b){b.onclick=function(){sv(K.famon,!famOn());render()}});
   if($("vx"))$("vx").onclick=function(){S.d=Object.assign({},S.d,{vfrom:S.v});S.vt="";S.vr=null;S.vexo=false;go("voix")};
   if($("vt"))$("vt").oninput=function(){S.vt=this.value;S.vr=null};
-  if($("vdoc"))$("vdoc").onclick=function(){if($("vt"))S.vt=$("vt").value;S.dfrom="voix";S.dt="";S.dr=null;go("doc")};
+  if($("vdoc"))$("vdoc").onclick=function(){if($("vt"))S.vt=$("vt").value;S.dfrom="voix";S.dt="";S.dtn="";S.dr=null;go("doc")};
   if($("dtx"))$("dtx").oninput=function(){S.dt=this.value;S.dr=null};
   if($("dgo"))$("dgo").onclick=function(){if($("dtx"))S.dt=$("dtx").value;analyserDoc();render()};
   if($("dpaste"))$("dpaste").onclick=function(){
     if(!navigator.clipboard||!navigator.clipboard.readText){msg="Collage direct indisponible : appuyez longuement dans le champ, puis Coller.";msgOk=false;return render()}
-    navigator.clipboard.readText().then(function(t){S.dt=String(t||"").slice(0,6000);analyserDoc();render()}).catch(function(){msg="Collage refusé : appuyez longuement dans le champ, puis Coller.";msgOk=false;render()})};
+    navigator.clipboard.readText().then(function(t){S.dt=String(t||"").slice(0,6000);S.dtn="";analyserDoc();render()}).catch(function(){msg="Collage refusé : appuyez longuement dans le champ, puis Coller.";msgOk=false;render()})};
   if($("dopen"))$("dopen").onclick=ouvrirDoc;
   if($("dimg"))$("dimg").onclick=function(){if($("dfile"))$("dfile").click()};
   if($("dfile"))$("dfile").onchange=function(){var fs=Array.prototype.slice.call(this.files||[]);this.value="";if(fs.length)lancerOcr(fs)};
