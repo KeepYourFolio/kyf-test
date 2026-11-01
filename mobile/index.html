@@ -192,7 +192,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.07", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.08", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -442,10 +442,12 @@ function parseVoix(txt,envCtx){
    financiers et attribue une confiance à chacun. Un champ ambigu reste vide.
    Confiance : "h" = sûr, "m" = à vérifier, "n" = non trouvé. */
 var DC_MOIS=function(n){return /^jan/.test(n)?1:/^fev/.test(n)?2:/^mar/.test(n)?3:/^avr/.test(n)?4:/^mai/.test(n)?5:/^juin/.test(n)?6:/^juil/.test(n)?7:/^aou/.test(n)?8:/^sep/.test(n)?9:/^oct/.test(n)?10:/^nov/.test(n)?11:/^dec/.test(n)?12:0};
+var DC_SANS_AN=/\b(\d{1,2})(?:er)?\s+(janv(?:ier)?|fevr(?:ier)?|mars|avr(?:il)?|mai|juin|juil(?:let)?|aout|sept(?:embre)?|oct(?:obre)?|nov(?:embre)?|dec(?:embre)?)\b\.?(?!\s*\d{4})/g;
 var DC_ISIN=/\b[a-z]{2}[a-z0-9]{9}\d\b/g, DC_DATES=[
   /\b((?:19|20)\d{2})-(\d{1,2})-(\d{1,2})\b/g,
   /\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}|\d{2})\b/g,
-  /\b(\d{1,2})(?:er)?\s+(janv\w*|fevr\w*|mars|avr\w*|mai|juin|juil\w*|aout|sept\w*|oct\w*|nov\w*|dec\w*)\.?\s+(\d{4})\b/g];
+  /\b(\d{1,2})(?:er)?\s+(janv\w*|fevr\w*|mars|avr\w*|mai|juin|juil\w*|aout|sept\w*|oct\w*|nov\w*|dec\w*)\.?\s+(\d{4})\b/g,
+  DC_SANS_AN];
 function dcBlanc(s,re){return s.replace(re,function(m){return new Array(m.length+1).join(" ")})}
 function dcIsinOk(s){s=String(s).toUpperCase();if(!/^[A-Z]{2}[A-Z0-9]{9}\d$/.test(s))return false;
   var d="",i,c;for(i=0;i<s.length;i++){c=s.charCodeAt(i);d+=c>=65?String(c-55):s.charAt(i)}
@@ -486,7 +488,7 @@ function parseDoc(txt){
     x=dcBlanc(x,DC_ISIN);DC_DATES.forEach(function(r){x=dcBlanc(x,r)});x=dcBlanc(x,/\d{1,2}:\d{2}(?::\d{2})?/g);x=dcBlanc(x,/\d[\d.,]*\s*%/g);return x});
   var T=NL.join("\n"),f={op:"",env:"",qty:"",prix:"",montant:"",frais:"",date:"",devise:""},c={op:"n",env:"n",ti:"n",qty:"n",prix:"n",montant:"n",frais:"n",date:"n",devise:"n"},notes=[],ti=null,i,m;
   /* 1. Opération */
-  var F={achat:/\b(achat|achete|acheter|ordre d achat|buy|bought|purchase|plan d epargne|investissement programme|savings plan|dca)\b/,vente:/\b(vente|vendu|vendre|ordre de vente|sell|sold|cession)\b/,dividende:/\b(dividendes?|dividend|coupon|distribution de revenus?)\b/,interets:/\binterets?\b|\binterest\b/,rachat:/\brachat\b/,swap:/\b(swap|echange|conversion|convert(?:ed|ir)?)\b/,versement:/\b(versement|depot|virement entrant|cotisation|top ?up|deposit)\b/,retrait:/\b(retrait|virement sortant|withdrawal|withdraw)\b/};
+  var F={achat:/\b(achat|achete|acheter|ordre d achat|buy|bought|purchase|plan d epargne|investissement programme|savings plan|dca)\b/,vente:/\b(vente|vendu|vendre|ordre de vente|sell|sold|cession)\b/,dividende:/\b(dividendes?|dividend|coupon|distribution de revenus?)\b/,interets:/\binterets?\b|\binterest\b/,rachat:/\brachat\b/,swap:/\b(swap|echange|conversion|convert(?:ed|ir)?)\b/,versement:/\b(versement|depot|virement entrant|virement recu|virement depuis|cotisation|top ?up|deposit)\b/,retrait:/\b(retrait|virement sortant|virement emis|virement vers|withdrawal|withdraw)\b/};
   var Tn=T,fort=[],faible=[];
   ["achat","vente","dividende","interets","rachat","swap"].forEach(function(k){if(F[k].test(Tn))fort.push(k)});
   ["versement","retrait"].forEach(function(k){if(F[k].test(Tn))faible.push(k)});
@@ -506,6 +508,8 @@ function parseDoc(txt){
   /* 3. ISIN, titre */
   var isins=[],seen={};
   NL.forEach(function(l,k){var re=/\b[a-z]{2}[a-z0-9]{9}\d\b/g,mm;while((mm=re.exec(l))){var u=mm[0].toUpperCase();if(!seen[u]){seen[u]=1;isins.push({isin:u,i:k,ok:dcIsinOk(u)})}}});
+  var cand0="",lbm;for(i=0;i<NL.length&&!cand0;i++){lbm=/^(actif|asset|instrument|support|titre)\s*[:\-]?\s*(.*)$/.exec(NL[i]);if(lbm){var cv=(lbm[2]||"").trim()?OL[i].slice(OL[i].length-lbm[2].length).trim():(OL[i+1]||"");cv=cv.replace(/[|>»©]+/g," ").replace(/\s+/g," ").trim();if(/[A-Za-z]{3,}/.test(cv)&&cv.length<=60&&!/\d{3,}/.test(cv))cand0=cv}}
+  var cand0c=nrm(cand0).replace(/[^a-z0-9]/g,"");
   var bons=isins.filter(function(x){return x.ok}),cand=bons.length?bons:isins;
   if(cand.length){
     var I0=cand[0],base=dcTitreIsin(I0.isin);
@@ -522,18 +526,21 @@ function parseDoc(txt){
       NL.forEach(function(l,k){var lc=l.replace(/[^a-z0-9]/g,"");if(lc.length>=10&&/\b(etf|ucits|sicav|fcp|opcvm|trust|plc)\b/.test(l)&&!/\bisin\b/.test(l))tl.push({c:lc,i:k})});
       for(x=0;x<L.length;x++){var tk=nrm(L[x].ticker||"").split(".")[0],nm=nrm(L[x].nom||""),nc=nm.replace(/[^a-z0-9]/g,""),hit=false;
         if(nc.length>=8&&TC.indexOf(nc)>-1)hit=true;
+        else if(cand0c.length>=5&&nc.indexOf(cand0c)>-1)hit=true;
         else if(nc.length>=10&&tl.some(function(t){return nc.indexOf(t.c.slice(0,Math.min(t.c.length,40)))>-1}))hit=true;
         else if(tk.length>=3&&!VX_STOP[tk]&&new RegExp("(^|[^a-z0-9])"+tk.replace(/[^a-z0-9]/g,"")+"($|[^a-z0-9])").test(Tn))hit=true;
         if(hit){var key=(L[x].isin||L[x].ticker||nm);if(!hits[key]){hits[key]=L[x];nh++}}}
       if(nh===1){var h1=hits[Object.keys(hits)[0]];ti={ticker:h1.ticker||"",isin:h1.isin||"",nom:h1.nom||"",inconnu:false};c.ti="m"}
       else if(nh>1)notes.push("Plusieurs titres de votre liste correspondent : saisissez le titre.");
+      else if(cand0){ti={ticker:"",isin:"",nom:cand0,inconnu:true};c.ti="m";notes.push("Titre absent de votre liste : saisissez son ticker ou son ISIN dans le champ Titre.")}
       else if(tl.length){ti={ticker:"",isin:"",nom:OL[tl[0].i].replace(/\s+\d[\d .,]*\s*(?:€|eur)?\s*$/i,"").trim(),inconnu:true};c.ti="m";notes.push("Titre absent de votre liste : saisissez son ticker ou son ISIN dans le champ Titre.")}}}
   /* 4. Frais, montant, quantité, prix */
   var REF=/\b(frais|commissions?|fees?|courtage)\b/;
   var rf=dcCherche(NL,ML,REF);if(rf){f.frais=rf.v;c.frais=rf.mem?"h":"m"}
+  if(!f.frais&&NL.some(function(l){return /\b(frais|commissions?|courtage)\b/.test(l)&&/\b(gratuit|free|offerts?|0 ?%)\b/.test(l)})){f.frais="0";c.frais="h"}
   var rt=dcCherche(NL,ML,/\b(montant(?: total| net| brut| de l ordre)?|total|somme|amount|valeur totale|valeur d execution)\b/,REF);
   if(rt&&+rt.v>0){f.montant=rt.v;c.montant=rt.mem?"h":"m"}
-  var rq=dcCherche(NL,ML,/\b(quantite|qte|qty|nombre de (?:parts|titres|actions)|nb (?:de )?(?:parts|titres)|nombre|shares?|volume)\b/,REF);
+  var rq=dcCherche(NL,ML,/\b(quantite|qte|qty|nombre de (?:parts|titres|actions)|nb (?:de )?(?:parts|titres)|nombre|shares?|volume)\b|^(?:actions?|parts?|titres?)\b/,REF);
   if(rq&&+rq.v>0){f.qty=rq.v;c.qty=rq.mem?"h":"m"}
   var rp=dcCherche(NL,ML,/\b(prix(?: unitaire| d execution| moyen)?|cours(?: d execution)?|price|valeur liquidative)\b/,REF);
   if(rp&&+rp.v>0){f.prix=rp.v;c.prix=rp.mem?"h":"m"}
@@ -561,6 +568,12 @@ function parseDoc(txt){
   if(dist.length===1){f.date=dist[0];c.date=ds.some(function(x){return /\b(date|execut|le)\b/.test(NL[x.i])})?"h":"m"}
   else if(dist.length>1){var pref=ds.filter(function(x){return /\b(date|execut|execution)\b/.test(NL[x.i])}),pd=[];pref.forEach(function(x){if(pd.indexOf(x.d)<0)pd.push(x.d)});
     if(pd.length===1){f.date=pd[0];c.date="m";notes.push("Plusieurs dates trouvées : celle de l’exécution est proposée.")}else notes.push("Plusieurs dates trouvées : saisissez la bonne.")}
+  if(!f.date&&!ds.length){
+    var sa=null;
+    NL.forEach(function(l){if(sa)return;DC_SANS_AN.lastIndex=0;var mm=DC_SANS_AN.exec(l);if(mm){var mo=DC_MOIS(mm[2]);if(mo){var y0=new Date().getFullYear(),dz=dcDateIso(y0,mo,mm[1])||dcDateIso(y0-1,mo,mm[1]);if(dz)sa=dz}}});
+    if(sa){f.date=sa;c.date="m";notes.push("L’année n’est pas indiquée sur le document : l’année la plus récente est supposée ("+sa.slice(0,4)+").")}
+    else if(/\baujourd hui\b/.test(T)){f.date=today();c.date="m"}
+    else if(/\bhier\b/.test(T)){var hh=new Date();hh.setDate(hh.getDate()-1);f.date=isoD(hh);c.date="m"}}
   /* 6. Devise */
   var nE=(T.match(/€|\beur\b|\beuros?\b/g)||[]).length,nU=(T.match(/\$|\busd\b/g)||[]).length,nG=(T.match(/£|\bgbp\b/g)||[]).length,nC=(T.match(/\bchf\b/g)||[]).length;
   var autres=nU+nG+nC;
@@ -693,8 +706,9 @@ function ocrCharger(){
   if(OCRJS)return OCRJS;
   OCRJS=new Promise(function(ok,ko){var s=document.createElement("script");s.src="ocr/tesseract.min.js";s.onload=ok;s.onerror=function(){OCRJS=null;ko(new Error("moteur"))};document.head.appendChild(s)});
   return OCRJS}
-/* Prétraitement : on garde l'écart entre chaque point et le fond local (texte sombre sur blanc, quelle que soit
-   la couleur du fond ou le thème clair / sombre). Les bandeaux colorés et les lignes sur fond vert ou gris sont lus. */
+/* Prétraitement : par rapport au fond local, on ne garde que ce qui est plus sombre (fond clair) ou plus clair (fond sombre),
+   puis on amplifie ×3 : texte sombre sur blanc quelle que soit la couleur du fond ou le thème. Les libellés gris clair, les gros
+   chiffres en gras et les bandeaux colorés sont lus. */
 function ocrFond(g,w,h,r){
   var n=w*h,t=new Float32Array(n),o=new Float32Array(n),hf=r>>1,q=2*hf+1,x,y,s,j,a,d;
   for(y=0;y<h;y++){var b=y*w;s=0;for(j=-hf;j<=hf;j++)s+=g[b+(j<0?0:j>=w?w-1:j)];
@@ -714,7 +728,7 @@ function ocrPreparer(file){
         var id=cx.getImageData(0,0,cw,ch),d=id.data,n=cw*ch,i,g=new Float32Array(n);
         for(i=0;i<n;i++)g[i]=d[i*4]*0.299+d[i*4+1]*0.587+d[i*4+2]*0.114;
         var m=ocrFond(g,cw,ch,(Math.max(21,Math.round(cw*0.045)))|1);
-        for(i=0;i<n;i++){var x=255-Math.abs(g[i]-m[i])*2;x=x<0?0:x>255?255:x;d[i*4]=d[i*4+1]=d[i*4+2]=x;d[i*4+3]=255}
+        for(i=0;i<n;i++){var dv=m[i]>=128?m[i]-g[i]:g[i]-m[i],x=255-dv*3;x=x<0?0:x>255?255:x;d[i*4]=d[i*4+1]=d[i*4+2]=x;d[i*4+3]=255}
         cx.putImageData(id,0,0);im.src="";URL.revokeObjectURL(u);ok(cv)}
       catch(e){URL.revokeObjectURL(u);ko(e)}}
     im.src=u})}
