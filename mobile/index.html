@@ -68,11 +68,21 @@ label{display:flex;flex-direction:column;gap:6px;color:var(--mut);font-size:.9re
 .gi svg{width:22px;height:22px;stroke-width:1.75}
 .gn{font-style:normal;font-size:.68rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;display:flex;align-items:center;justify-content:center;background:var(--acc);color:var(--onacc)}
 .gt:active{transform:scale(.97)}
+.dd{display:inline-flex;align-items:center;gap:5px;color:var(--k);font-size:.7rem;font-weight:600}.dd i{width:7px;height:7px;border-radius:50%;background:var(--k)}
+.dsum{display:flex;flex-direction:column;gap:8px}.dsum b{font-size:.95rem}.dsum small{display:block;color:var(--mut);font-size:.78rem;margin-top:2px}
+.dbar{height:6px;border-radius:3px;background:color-mix(in srgb,var(--ink) 14%,transparent);overflow:hidden}.dbar i{display:block;height:100%;background:var(--gn)}
+.dg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.df{background:var(--card);border:1px solid color-mix(in srgb,var(--ink) 20%,var(--line));border-radius:12px;padding:8px 12px;gap:2px;min-width:0}.df.full{grid-column:span 2}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:.72rem;color:var(--mut)}
+.df input,.df select{min-height:34px;border:0;background:transparent;padding:0;font-weight:600;color:var(--ink);width:100%}
+.df select{appearance:auto}
+.dcta{position:sticky;bottom:0;padding:12px 0 4px;margin-top:4px;background:linear-gradient(180deg,transparent,var(--bg) 30%)}.dcta .p{width:100%;min-height:56px}
+.essai{border:1px dashed color-mix(in srgb,var(--ink) 30%,var(--line));border-radius:12px;padding:0 12px;color:var(--mut);font-size:.82rem}.essai summary{min-height:46px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600}.essai[open]{padding-bottom:12px;display:flex;flex-direction:column;gap:10px}
 .tile{min-height:112px;border-radius:20px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;border:1px solid color-mix(in srgb,var(--k) 38%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--k) 14%,var(--card)),var(--card) 70%)}
 .tile b{font-size:1.2rem;display:block}.tile small{color:var(--mut);font-size:.82rem;font-weight:400}
 .ic{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--k);background:color-mix(in srgb,var(--k) 18%,transparent)}
 .gl{font-size:.85rem;font-weight:600;color:var(--mut);margin:6px 2px -2px}
-.list{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.list{background:var(--card);border:1px solid color-mix(in srgb,var(--ink) 18%,var(--line));border-radius:20px;overflow:hidden}
 .li{width:100%;min-height:62px;border:0;border-radius:0;background:none;display:flex;align-items:center;gap:14px;padding:0 14px}
 .li+.li{border-top:1px solid var(--line)}
 .li .ic{width:38px;height:38px;border-radius:12px}
@@ -126,6 +136,7 @@ label.li{cursor:pointer;flex-direction:row;color:var(--ink);font-size:1rem;gap:1
 .sum{display:flex;justify-content:space-between;align-items:baseline}.sum b{font-size:1.6rem;letter-spacing:-.02em}
 .seg{display:flex;background:color-mix(in srgb,var(--ink) 9%,transparent);border-radius:14px;padding:4px;gap:4px}
 .seg button{flex:1;min-height:44px;border:0;border-radius:11px;background:none;text-align:center;padding:0 6px}
+.seg.pq button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;white-space:nowrap;min-height:52px;font-size:.82rem}.seg.pq b{color:var(--acc);font-size:.8rem}
 .seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.25);font-weight:600}
 .danger{color:var(--err)}
 details.cd summary{cursor:pointer;font-weight:600;min-height:28px}
@@ -200,7 +211,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.14", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.15", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -258,7 +269,7 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.14)
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.15)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
@@ -674,34 +685,37 @@ async function lireNatif(file){
 /* ===== Import de texte : écran, ouverture du formulaire, partage entrant ===== */
 var PART=null;
 function dcChip(k,id){var t=k==="h"?"sûr":k==="m"?"à vérifier":k==="s"?"saisi":"à compléter",col=(k==="h"||k==="s")?"--gn":k==="m"?"--acc":"--mut";
-  return `<span class="chip dcc" style="--k:var(${col});padding:2px 8px;font-size:.72rem;align-self:flex-start;width:fit-content">${t}</span>`}
+  return `<span class="dd" style="--k:var(${col})"><i></i>${t}</span>`}
 function docHtml(){
   var R=S.dr,h="";
   h+=`<div class="fh"><button class="bk" id="bk" aria-label="Retour">${I.back}</button><div><h2>Importer un texte</h2><small>Copié ou partagé depuis une autre appli</small></div></div>`;
-  h+=`<div class="cd"><label>Texte de l’opération<textarea id="dtx" rows="6" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}</div>`;
+  h+=`<div class="cd"><label class="sr">Texte de l’opération<textarea id="dtx" rows="${R&&R.ok?3:6}" maxlength="6000" placeholder="Collez ici le texte de votre opération" autocomplete="off">${esc(S.dt||"")}</textarea></label><div class="g2"><button id="dpaste"${S.ocr?" disabled":""}>${I.file} Coller</button><button class="p" id="dgo"${S.ocr?" disabled":""}>Analyser</button></div>${S.ocr?`<small class="hint" id="ocrp" role="status">Lecture de l’image : 0 %</small>`:""}</div>`;
   if(!R&&!S.ocr)h+=`<div class="cd"><small class="hint"><b>Exemple de ce qu’on peut copier</b> (dans l’appli de votre banque ou courtier, appui long sur le texte, puis Copier) :<br>Achat · Amundi PEA S&amp;P 500 · 3 parts · 59,70 € · Total 179,10 € · 30/09/2026</small><small class="hint">Même incomplet, ça marche : ce qui est lu est pré-rempli, vous complétez le reste.</small></div>`;
   h+=`<small class="hint">Le texte est lu sur ce téléphone, rien n’est envoyé ni conservé après l’ouverture du formulaire.</small>`;
-  h+=`<details class="cd"><summary>Essai : lire une capture d’écran</summary><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><small class="hint">Fonction d’essai : la lecture d’image est moins fiable que le texte copié. La première fois, le moteur se télécharge (environ 10 Mo), ensuite il fonctionne hors ligne.</small></details>`;
+  var essaiH=`<details class="essai"><summary>${I.cam||""} Essai : lire une capture d’écran</summary><button id="dimg"${S.ocr?" disabled":""}>${I.file} Choisir une capture d’écran</button><input type="file" id="dfile" accept="image/*" multiple hidden><small class="hint">Fonction d’essai : la lecture d’image est moins fiable que le texte copié. La première fois, le moteur se télécharge (environ 10 Mo), ensuite il fonctionne hors ligne.</small></details>`;
   if(R&&!R.ok)h+=`<div class="msg err" role="alert">${esc(R.why)}</div>`;
   if(R&&R.ok){
     var f=R.f,c=R.c,tit=!f.op||f.op==="achat"||f.op==="vente"||f.op==="dividende",qp=!f.op||f.op==="achat"||f.op==="vente";
-    var OPT=[["","— choisir —"],["achat","Achat"],["vente","Vente"],["dividende","Dividende"],["interets","Intérêts"],["versement","Versement ou dépôt"],["retrait","Retrait"],["rachat","Rachat (assurance vie, PER)"]];
-    function fld(lbl,k,inner){return `<label>${lbl}${dcChip(c[k])}${inner}</label>`}
-    function inp(k,ph){return `<input data-df="${k}" inputmode="decimal" autocomplete="off" placeholder="${ph||""}" value="${esc(f[k])}">`}
     var KS=["op","env"].concat(tit?["ti"]:[],qp?["qty","prix"]:[],["montant","date"]),nl=KS.filter(function(k){var x=c[k];return x==="h"||x==="m"||x==="s"}).length;
-    h+=`<p class="gl">Fiche de vérification</p><p class="hint" style="color:var(--gn)">J’ai lu ${nl} champ${nl>1?"s":""} sur ${KS.length}${nl<KS.length?" : complétez les autres, ou ouvrez le formulaire et complétez-les là-bas.":"."}</p><div class="cd">`;
+    var OPT=[["","— choisir —"],["achat","Achat"],["vente","Vente"],["dividende","Dividende"],["interets","Intérêts"],["versement","Versement ou dépôt"],["retrait","Retrait"],["rachat","Rachat (assurance vie, PER)"]];
+    var manq=KS.filter(function(k){var x=c[k];return !(x==="h"||x==="m"||x==="s")}).length;
+    h+=`<div class="dsum"><div><b>J’ai lu ${nl} champ${nl>1?"s":""} sur ${KS.length}</b><small>${manq?"Complétez les autres ici ou dans le formulaire.":"Vérifiez puis ouvrez le formulaire."}</small></div><div class="dbar" role="img" aria-label="${nl} sur ${KS.length}"><i style="width:${Math.round(100*nl/KS.length)}%"></i></div></div>`;
+    function fld(lbl,k,inner,full){return `<label class="df${full?" full":""}"><span class="dh"><span>${lbl}</span>${dcChip(c[k])}</span>${inner}</label>`}
+    function inp(k,ph){return `<input data-df="${k}" inputmode="decimal" autocomplete="off" placeholder="${ph||""}" value="${esc(f[k])}">`}
+    h+=`<div class="dg">`;
     h+=fld("Opération","op",`<select data-df="op">${OPT.map(function(o){return `<option value="${o[0]}"${f.op===o[0]?" selected":""}>${o[1]}</option>`}).join("")}</select>`);
     h+=fld("Compte","env",`<select data-df="env"><option value="">— choisir —</option>${ENV.map(function(e){return `<option value="${e}"${f.env===e?" selected":""}>${esc(ENVL[e]||e)}</option>`}).join("")}</select>`);
-    if(tit)h+=fld("Titre","ti",`<input data-dt="1" autocomplete="off" placeholder="Ticker, ISIN ou nom" value="${esc(R.tt)}">`)+(R.ti&&!R.tiMod&&(R.ti.nom||R.ti.isin)?`<small class="hint">${esc(R.ti.nom||"")}${R.ti.nom&&R.ti.isin?" · ":""}${esc(R.ti.isin||"")}</small>`:"");
-    if(qp)h+=fld("Quantité","qty",inp("qty"))+fld("Prix unitaire en euros","prix",inp("prix"));
-    h+=fld("Montant total en euros","montant",inp("montant"));
-    h+=(f.frais!==""&&f.frais!=null?fld("Frais en euros","frais",inp("frais","facultatif")):`<label>Frais en euros<input data-df="frais" inputmode="decimal" autocomplete="off" placeholder="facultatif" value=""></label>`);
-    h+=fld("Date","date",`<input data-df="date" type="date" value="${esc(f.date)}">`)+(f.date?"":`<small class="hint">Pas de date lue : celle du jour sera proposée.</small>`);
-    if(f.devise)h+=`<small class="hint">Devise lue : ${esc(f.devise)}</small>`;
+    if(tit)h+=fld("Titre","ti",`<input data-dt="1" autocomplete="off" placeholder="Ticker, ISIN ou nom" value="${esc(R.tt)}">`+(R.ti&&!R.tiMod&&(R.ti.nom||R.ti.isin)?`<small class="hint">${esc(R.ti.nom||"")}${R.ti.nom&&R.ti.isin?" · ":""}${esc(R.ti.isin||"")}</small>`:""),1);
+    if(qp)h+=fld("Quantité","qty",inp("qty"))+fld("Prix unitaire","prix",inp("prix","€"));
+    h+=fld("Montant total","montant",inp("montant","€"));
+    h+=`<label class="df"><span class="dh"><span>Frais</span>${f.frais!==""&&f.frais!=null?dcChip(c.frais):dcChip("n")}</span><input data-df="frais" inputmode="decimal" autocomplete="off" placeholder="facultatif" value="${esc(f.frais)}"></label>`;
+    h+=fld("Date","date",`<input data-df="date" type="date" value="${esc(f.date)}">`+(f.date?"":`<small class="hint">Pas de date lue : celle du jour sera proposée.</small>`),1);
     h+=`</div>`;
+    if(f.devise)h+=`<small class="hint">Devise lue : ${esc(f.devise)}</small>`;
     if(R.dbl)h+=`<small class="hint">Image lue deux fois (Tesseract et OCR du téléphone) : « sûr » = valeur confirmée par les deux lectures.</small>`;
     R.notes.forEach(function(n){h+=`<p class="hint" style="color:var(--acc)">⚠ ${esc(n)}</p>`});
-    h+=`<div class="cd"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button><small class="hint">Les champs à compléter restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small></div>`}
+    h+=`<small class="hint">Les champs à compléter restent vides : rien n’est inventé et rien n’est ajouté avant votre validation.</small>`+essaiH+`<div class="dcta"><button class="p" id="dopen">Ouvrir le formulaire pré-rempli</button></div>`}
+  if(!(R&&R.ok))h+=essaiH;
   return h}
 function autoColler(){try{if(!navigator.clipboard||!navigator.clipboard.readText)return;
   navigator.clipboard.readText().then(function(t){t=String(t||"").trim();if(S.v!=="doc"||S.dt||!t||t.length<8)return;S.dt=t.slice(0,6000);S.dtn="";analyserDoc();render()}).catch(function(){})}catch(e){}}
@@ -914,10 +928,10 @@ function render(){
     if(Q)L=L.filter(function(r){return nrm([libType(r.x.type),r.x.compte||r.x.enveloppe,sousTitre(r.x),r.x.date].join(" ")).indexOf(Q)>-1});
     L.sort(function(a,b){return a.x.date<b.x.date?1:a.x.date>b.x.date?-1:b.i-a.i});
     var shown=L.slice(0,lim),rest=L.length-shown.length,cnt={};L.forEach(function(r){cnt[r.x.date]=(cnt[r.x.date]||0)+1});
-    h+=`<h1>Vos paquets</h1><div class="seg" role="group" aria-label="État des opérations">${[["todo","À envoyer",cT],["sent","Envoyées",cS],["done","Enregistrées",cD]].map(function(t){return `<button data-pqt="${t[0]}" aria-pressed="${tab===t[0]?"true":"false"}">${t[1]} <b>${t[2]}</b></button>`}).join("")}</div>`;
+    h+=`<h1>Vos paquets</h1><div class="seg pq" role="group" aria-label="État des opérations">${[["todo","À envoyer",cT],["sent","Envoyées",cS],["done","Enregistrées",cD]].map(function(t){return `<button data-pqt="${t[0]}" aria-pressed="${tab===t[0]?"true":"false"}"><span>${t[1]}</span><b>${t[2]}</b></button>`}).join("")}</div>`;
     if(S.undo)h+=`<div class="msg ok" style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span>Opération supprimée</span><button class="l" id="undo" style="min-height:36px;color:inherit;font-weight:700;width:auto">Annuler</button></div>`;
     if(tab==="sent"&&cS)h+=`<div class="list"><label class="li" style="--k:var(--gn)"><span class="ic">${I.file}</span><span><b>Charger le reçu de KYF</b><small>Fichier .kyfrecu ou texte copié depuis KYF</small></span><input id="rf" type="file" hidden accept=".kyfrecu,.json,application/json"></label></div><details class="cd"><summary>Coller le texte du reçu</summary><textarea id="rp" rows="3" autocomplete="off" aria-label="Texte du reçu"></textarea><button id="rpb">Charger le texte collé</button></details>`;
-    if(!tc)h+=`<div class="hero"><span class="hic">${SV('<path d="M21 8l-9-5-9 5v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/>').replace('width="22" height="22"','width="34" height="34"')}</span><p>${tab==="todo"?"Aucune opération à envoyer. Ajoutez-en depuis l’accueil, elles seront chiffrées avant l’envoi.":tab==="sent"?"Aucune opération en attente de KYF. Une fois le fichier envoyé, elles apparaissent ici jusqu’au reçu.":"Aucune opération enregistrée pour le moment."}</p></div>`;
+    if(!tc)h+=`<div class="hero"><span class="hic">${SV('<path d="M21 8l-9-5-9 5v8l9 5 9-5V8zM3 8l9 5 9-5M12 13v8"/>').replace('width="22" height="22"','width="34" height="34"')}</span><p>${tab==="todo"?"Aucune opération à envoyer. Ajoutez-en depuis l’accueil, elles seront chiffrées avant l’envoi.":tab==="sent"?"Aucune opération en attente de KYF. Une fois le fichier envoyé, elles apparaissent ici jusqu’au reçu.":"Aucune opération enregistrée pour le moment."}</p>${tab==="todo"?`<button class="p" id="pqnew" style="width:100%;text-align:center">Nouvelle opération</button>`:""}</div>`;
     else{
       h+=`<div class="cd" style="flex-direction:row;align-items:center;justify-content:space-between;padding:10px 14px"><span><b>${tc}</b> opération${tc>1?"s":""}${Q?" · "+L.length+" trouvée"+(L.length>1?"s":""):""}${tab==="todo"&&cT>=180?" · max 200":""}</span>${tab==="sent"?'<button class="l" id="rst" style="min-height:36px;width:auto">Remettre à envoyer</button>':`<button class="l danger" id="clr" style="min-height:36px;width:auto">${tab==="todo"?"Vider":"Effacer"}</button>`}</div>`;
       if(tc>8)h+=`<label class="srch"><span class="si">${I.search}</span><input id="pq" value="${esc(S.pqq||"")}" placeholder="Filtrer : titre, compte, type, date" autocomplete="off" aria-label="Filtrer les opérations"></label>`;
@@ -1011,7 +1025,7 @@ function render(){
 }else if(v==="reglages"){
     var C=comptes(),dm=delaiMin();
     h+=`<h1>Réglages</h1><div class="cd stat"><span class="ic" style="--k:var(--gn)">${I.shield}</span><div><b>Coffre chiffré</b><small>Verrouillage après ${dm} min en arrière-plan · ${todo(o)} opération${todo(o)>1?"s":""} à envoyer · ${C.length} compte${C.length>1?"s":""}</small></div></div>`;
-    h+=`<div class="list" style="margin-top:12px">${regRow("reg_sec","--gn",I.shield,"Sécurité","Phrase secrète · verrouillage · effacer le coffre")}${regRow("reg_aff","--pu",ICO_SUN,"Affichage","Thème clair, sombre ou automatique")}${regRow("reg_ges","--bl",I.gear,"Gestion","Titres · comptes · famille · dictée vocale")}${regRow("reg_app","--acc",ICO_PHONE,"Application","Installation · contact · version")}</div>`;
+    h+=`<div class="list" style="margin-top:12px">${regRow("reg_sec","--gn",I.shield,"Sécurité","Phrase secrète, empreinte, verrouillage")}${regRow("reg_aff","--pu",ICO_SUN,"Affichage","Thème clair, sombre ou automatique")}${regRow("reg_ges","--bl",I.gear,"Gestion","Titres · comptes · famille · dictée vocale")}${regRow("reg_app","--acc",ICO_PHONE,"Application","Installation · contact · version")}</div>`;
     h+=`<p class="hint">Keep Your Folio Mobile · version ${VER}. Vos données sont chiffrées sur cet appareil. Seuls le contact, la mise à jour de la liste de titres et, si vous l’activez, la dictée vocale (faite par votre navigateur) utilisent le réseau.</p>`;
   }else if(v==="reg_sec"){
     var dm=delaiMin(),DL=[1,2,5,15];
@@ -1249,6 +1263,7 @@ function lier(o){
     if(!navigator.clipboard||!navigator.clipboard.readText){msg="Collage direct indisponible : appuyez longuement dans le champ, puis Coller.";msgOk=false;return render()}
     navigator.clipboard.readText().then(function(t){S.dt=String(t||"").slice(0,6000);S.dtn="";analyserDoc();render()}).catch(function(){msg="Collage refusé : appuyez longuement dans le champ, puis Coller.";msgOk=false;render()})};
   if($("dopen"))$("dopen").onclick=ouvrirDoc;
+  if($("pqnew"))$("pqnew").onclick=function(){go("home",{})};
   if($("dimg"))$("dimg").onclick=function(){if($("dfile"))$("dfile").click()};
   if($("dfile"))$("dfile").onchange=function(){var fs=Array.prototype.slice.call(this.files||[]);this.value="";if(fs.length)lancerOcr(fs)};
   Array.prototype.forEach.call(app.querySelectorAll("[data-df]"),function(b){var k=b.getAttribute("data-df"),sel=b.tagName==="SELECT";
