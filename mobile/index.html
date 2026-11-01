@@ -81,7 +81,7 @@ label{display:flex;flex-direction:column;gap:6px;color:var(--mut);font-size:.9re
 :root{--wn:color-mix(in srgb,var(--acc) 45%,var(--ink) 55%)}
 .bioz{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px}.bioz button{width:64px;height:64px;min-height:64px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid color-mix(in srgb,var(--ink) 25%,var(--line));background:var(--card);color:color-mix(in srgb,var(--acc) 72%,var(--ink) 28%)}.bioz svg{width:30px;height:30px;stroke-width:1.75}.bioz small{color:var(--mut);font-size:.78rem}
 .ou{display:flex;align-items:center;gap:12px;color:var(--mut);font-size:.78rem;padding:6px 8px}.ou i{flex:1;height:1px;background:color-mix(in srgb,var(--ink) 25%,var(--line))}
-#ul:not(.p){min-height:54px;border:1.5px solid color-mix(in srgb,var(--acc) 70%,var(--ink) 30%);background:color-mix(in srgb,var(--acc) 10%,var(--card));font-weight:600}
+
 .tile{min-height:112px;border-radius:20px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;border:1px solid color-mix(in srgb,var(--k) 38%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--k) 14%,var(--card)),var(--card) 70%)}
 .tile b{font-size:1.2rem;display:block}.tile small{color:var(--mut);font-size:.82rem;font-weight:400}
 .ic{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--k);background:color-mix(in srgb,var(--k) 18%,transparent)}
@@ -215,7 +215,7 @@ label.rp{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-si
 <main id="app"></main>
 <script>
 "use strict";
-var VER="1.7.0.18", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
+var VER="1.7.0.19", K={ops:"kyfm-ops",phrase:"kyfm-phrase",tick:"kyfm-tickers",last:"kyfm-last",frais:"kyfm-frais",fam:"kyfm-fam",pour:"kyfm-pour",theme:"kyfm-theme",rec:"kyfm-rec",base:"kyfm-base",lastc:"kyfm-lastc",cpt:"kyfm-comptes",delay:"kyfm-delay",voice:"kyfm-voice",noms:"kyfm-noms",act:"kyfm-actifs",sent:"kyfm-envois",famon:"kyfm-famon"};
 var TYPES=[["achat","Acheter"],["vente","Vendre"],["dividende","Dividende"],["versement","Versement"],["retrait","Retrait"],["crypto_achat","Achat crypto"],["crypto_vente","Vente crypto"],["livret_depot","Dépôt livret"],["livret_retrait","Retrait livret"],["arbitrage","Arbitrage"],["frais_av","Frais AV"],["av_versement","Versement AV ou PER"],["av_programme","Versement programmé"],["av_rachat","Rachat"],["av_valeur","Valeur du contrat"],["av_ligne_valeur","Valeur d’une ligne"],["av_ligne_nouvelle","Nouvelle ligne manuelle"],["livret_interets","Intérêts livret"],["actif_nouveau","Nouvel actif"],["actif_valeur","Valeur d’un actif"],["crypto_swap","Swap crypto"],["crypto_transfert","Transfert crypto"],["crypto_frais","Frais crypto"],["immo_valeur","Valeur d’un bien"],["immo_loyer","Loyer d’un bien"],["or_achat","Achat d’or ou de métal"],["or_vente","Vente d’or ou de métal"],["crowd_projet","Nouveau projet"],["crowd_maj","Mise à jour d’un projet"],["scpi_achat","Achat de parts de SCPI"],["scpi_vente","Vente de parts de SCPI"],["scpi_dividende","Dividende de SCPI"],["scpi_maj","Mise à jour d’une SCPI"]];
 var AVEC_TITRE=["achat","vente","dividende","crypto_achat","crypto_vente"];
 var SANS_QP=["versement","retrait","livret_depot","livret_retrait","livret_interets"];
@@ -273,13 +273,14 @@ async function chargerListe(t){
     msg=L.length+" titres chargés depuis KYF"+(Array.isArray(cp)?", "+comptes().filter(function(c){return c.kyf}).length+" contrat(s)":"")+(Array.isArray(ac)?", "+actifs().filter(function(x){return x.kyf}).length+" bien(s)":"")+".";msgOk=true}
   catch(e){msg=(e&&e.name==="OperationError")?"Phrase secrète différente de celle de KYF, ou liste modifiée.":"Liste illisible."}
   render()}
-/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.18)
+/* ===== Clé d'accès (passkey) : empreinte, visage, gestionnaire de mots de passe (1.7.0.19)
    La phrase secrète reste la référence. La clé d'accès (WebAuthn + extension PRF) fournit un secret
    propre à l'authentificateur : il sert à chiffrer la phrase, stockée chiffrée sur cet appareil.
    Sans l'empreinte ou la clé d'accès, le contenu stocké est inutilisable. */
 var BIO="kyfm-bio";
 function bioDispo(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&window.isSecureContext)}
 function bioActif(){try{var c=JSON.parse(localStorage.getItem(BIO));return !!(c&&c.id&&c.salt&&c.iv&&c.ct)}catch(e){return false}}
+function bioKind(){try{var c=JSON.parse(localStorage.getItem(BIO));return c&&c.kind==="key"?"key":"emp"}catch(e){return"emp"}}
 function bioOff(){try{localStorage.removeItem(BIO)}catch(e){}try{indexedDB.deleteDatabase("kyfm-bio")}catch(e){}}
 async function bioCle(res){var raw=res&&res.prf&&res.prf.results&&res.prf.results.first;if(!raw)throw new Error("noprf");
   var b=await crypto.subtle.importKey("raw",raw,"HKDF",false,["deriveKey"]);
@@ -295,11 +296,11 @@ async function bioActiver(emp){
   var ext=cr.getClientExtensionResults(),id=new Uint8Array(cr.rawId),iv=crypto.getRandomValues(new Uint8Array(12)),rec=null;
   if(!emp&&ext.prf&&ext.prf.enabled){try{var key=await bioCle(await bioLire(id,salt));
     var ct=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},key,new TextEncoder().encode(PH)));
-    rec={v:1,mode:"prf",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct)}}catch(e){if(e&&e.name==="NotAllowedError")throw e}}
+    rec={v:1,kind:emp?"emp":"key",mode:"prf",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct)}}catch(e){if(e&&e.name==="NotAllowedError")throw e}}
   if(!rec){/* repli : le gestionnaire ne fournit pas de secret propre. L'empreinte (ou le verrou) doit être validée, puis une clé gardée sur l'appareil, non exportable, ouvre la phrase. */
     var k2=await crypto.subtle.generateKey({name:"AES-GCM",length:256},false,["encrypt","decrypt"]);
     var ct2=new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM",iv:iv},k2,new TextEncoder().encode(PH)));
-    await idbPut(k2);rec={v:1,mode:"dev",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct2)}}
+    await idbPut(k2);rec={v:1,kind:emp?"emp":"key",mode:"dev",id:b64(id),salt:b64(salt),iv:b64(iv),ct:b64(ct2)}}
   localStorage.setItem(BIO,JSON.stringify(rec))}
 async function bioLire(id,salt){
   var a=await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rpId:location.hostname,allowCredentials:[{type:"public-key",id:id}],userVerification:"required",hints:["client-device"],timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
@@ -436,6 +437,7 @@ function lireCr(){var c=S.d.cr||(S.d.cr={sens:"entrant",inv:true});if($("crd")){
 function symCr(n){n=(n||"").trim();return/^[A-Za-z0-9]{2,12}$/.test(n)?n.toUpperCase():""}
 function lireAvp(){var a=S.d.avp||(S.d.avp={freq:"monthly",jour:"1"});if($("vdt")){a.date=$("vdt").value;if($("vmt"))a.montant=$("vmt").value;if($("vj"))a.jour=$("vj").value;if($("vl"))a.ligne=$("vl").value;if($("vdb"))a.deb=$("vdb").value;if($("vln")){a.ln=$("vln").value;a.vl=$("vlv").value;a.tx=$("vtx").value;if($("vli")){a.iv=$("vli").value;a.is=$("vis").value;a.lt=$("vlt").value}}if($("vva")){a.val=$("vva").value;a.fe=$("vfe").value;a.uc=$("vuc").value}
   var LG=(S.d.cpt&&S.d.cpt.lignes)||[];a.rep=a.rep||{};LG.slice(0,30).forEach(function(l,i){if($("rp"+i))a.rep[i]=$("rp"+i).value})}}
+var GIC_KEY='<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>';
 var GIC_FP='<path d="M12 11v4a6 6 0 0 1-1 3.3"/><path d="M8 11a4 4 0 0 1 8 0v2"/><path d="M5 13a7 7 0 0 1 14-2"/><path d="M16 15v2a8 8 0 0 1-1.5 4.2"/><path d="M8 15v1a5 5 0 0 1-.5 2"/>';
 var GRP=[["Bourse",["PEA","PEA-PME","CTO"]],["Épargne",["AV","PER","Livret"]],["Autres actifs",["Crypto","Or","Immobilier","Crowdfunding","SCPI","Autres actifs"]]];
 var GIC={"PEA":'<polyline points="3,17 8,11 13,14 21,5"/><polyline points="17,5 21,5 21,9"/>',"PEA-PME":'<polyline points="3,17 8,11 13,14 21,5"/><polyline points="17,5 21,5 21,9"/>',"CTO":'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',"AV":'<path d="M12 3L4 7v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V7L12 3z"/>',"PER":'<path d="M12 3L4 7v6c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V7L12 3z"/>',"Livret":'<rect x="3" y="10" width="18" height="11" rx="1"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/><line x1="12" y1="14" x2="12" y2="17"/>',"Crypto":'<path d="M11.5 3v18M8 3v18M6 7h9.5a3.5 3.5 0 0 1 0 7H6m0 0h10a3.5 3.5 0 0 1 0 7H6"/>',"Or":'<rect x="3" y="15" width="18" height="5" rx="1"/><rect x="5" y="10" width="14" height="5" rx="1"/><rect x="7" y="5" width="10" height="5" rx="1"/>',"Immobilier":'<path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',"Crowdfunding":'<path d="M19 7a7 7 0 1 0 0 10"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="13" y2="14"/>',"SCPI":'<rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="7" x2="9" y2="7.01"/><line x1="15" y1="7" x2="15" y2="7.01"/><line x1="9" y1="12" x2="9" y2="12.01"/><line x1="15" y1="12" x2="15" y2="12.01"/><line x1="9" y1="17" x2="15" y2="17"/>',"Autres actifs":'<path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="19" r="1.5"/><circle cx="16.5" cy="19" r="1.5"/>'};
@@ -888,8 +890,8 @@ function render(){
   }else if(v==="unlock"){
     var bio=bioActif();
     h+=`<div class="hero"><span class="hic">${LOCKB}</span><h1>Appli verrouillée</h1><p>${bio?"Vos données sont chiffrées sur ce téléphone.":"Entrez votre phrase secrète pour ouvrir vos données chiffrées."}</p></div>`;
-    if(bio)h+=`<div class="bioz"><button id="bio" aria-label="Déverrouiller avec l’empreinte, le visage ou la clé d’accès">${SV(GIC_FP)}</button><small>Touchez pour déverrouiller</small></div><div class="ou"><i></i>ou avec votre phrase<i></i></div>`;
-    h+=`${pwField("f1","Phrase secrète")}${msgHtml()}<div class="cta"><button class="${bio?"":"p"}" id="ul" style="text-align:center">${bio?"Déverrouiller avec la phrase":"Déverrouiller"}</button><button class="l danger" id="rz">Phrase oubliée : effacer le coffre</button></div>`;
+    if(bio)h+=`<div class="bioz"><button id="bio" aria-label="${bioKind()==="key"?"Déverrouiller avec la clé d’accès":"Déverrouiller avec l’empreinte ou le visage"}">${SV(bioKind()==="key"?GIC_KEY:GIC_FP)}</button><small>${bioKind()==="key"?"Utiliser la clé d’accès":"Touchez pour déverrouiller"}</small></div><div class="ou"><i></i>ou avec votre phrase<i></i></div>`;
+    h+=`${pwField("f1","Phrase secrète")}${msgHtml()}<div class="cta"><button class="p" id="ul" style="text-align:center">${bio?"Déverrouiller avec la phrase":"Déverrouiller"}</button><button class="l danger" id="rz">Phrase oubliée : effacer le coffre</button></div>`;
   }else if(v==="home"){
     h+=`<h1>Nouvelle opération</h1>${homeTop(o)}<button class="li cd" id="vx" style="--k:var(--acc);padding:0 14px;min-height:60px;border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card))"><span class="ic">${I.mic}</span><span><b>Dicter, coller ou écrire</b><small>Le plus rapide pour une opération</small></span><span class="ch">${CHEV}</span></button>`;
     GRP.forEach(function(g){h+=`<p class="gh">${g[0]}</p><div class="gg">${g[1].map(function(k){var e=EVL.filter(function(x){return x[0]===k})[0],n=comptes().filter(function(c){return c.type===k}).length;
@@ -1038,7 +1040,7 @@ function render(){
   }else if(v==="reg_sec"){
     var dm=delaiMin(),DL=[1,2,5,15];
     h+=regHead("Sécurité","Réglages");
-    h+=`<p class="gl">Sécurité</p><div class="list"><button class="li" id="chp" style="--k:var(--acc)"><span class="ic">${I.key}</span><span><b>Changer la phrase secrète</b><small>Re-chiffre tout le coffre</small></span><span class="ch">${CHEV}</span></button>${bioDispo()?(bioActif()?`<button class="li" id="bioff" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Empreinte et clé d’accès : activées</b><small>Appuyez pour désactiver</small></span></button>`:`<button class="li" id="bioemp" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Empreinte ou visage (Face ID)</b><small>Utilise le verrouillage du téléphone</small></span><span class="ch">${CHEV}</span></button><button class="li" id="bioon" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Clé d’accès</b><small>Gestionnaire de mots de passe : Google, RoboForm…</small></span><span class="ch">${CHEV}</span></button>`):""}<button class="li" id="vrl" style="--k:var(--acc)"><span class="ic">${LOCK}</span><span><b>Verrouiller maintenant</b><small>Il faudra retaper votre phrase</small></span></button></div><p class="gl">Verrouillage automatique, appli en arrière-plan</p><div class="seg" role="group" aria-label="Verrouillage automatique">${DL.map(function(m){return `<button data-dl="${m}" aria-pressed="${dm===m?"true":"false"}">${m} min</button>`}).join("")}</div>`;
+    h+=`<p class="gl">Sécurité</p><div class="list"><button class="li" id="chp" style="--k:var(--acc)"><span class="ic">${I.key}</span><span><b>Changer la phrase secrète</b><small>Re-chiffre tout le coffre</small></span><span class="ch">${CHEV}</span></button>${bioDispo()?(bioActif()?`<button class="li" id="bioff" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>${bioKind()==="key"?"Clé d’accès : activée":"Empreinte ou visage : activé"}</b><small>Appuyez pour désactiver</small></span></button>`:`<button class="li" id="bioemp" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Empreinte ou visage (Face ID)</b><small>Utilise le verrouillage du téléphone</small></span><span class="ch">${CHEV}</span></button><button class="li" id="bioon" style="--k:var(--gn)"><span class="ic">${I.key}</span><span><b>Clé d’accès</b><small>Gestionnaire de mots de passe : Google, RoboForm…</small></span><span class="ch">${CHEV}</span></button>`):""}<button class="li" id="vrl" style="--k:var(--acc)"><span class="ic">${LOCK}</span><span><b>Verrouiller maintenant</b><small>Il faudra retaper votre phrase</small></span></button></div><p class="gl">Verrouillage automatique, appli en arrière-plan</p><div class="seg" role="group" aria-label="Verrouillage automatique">${DL.map(function(m){return `<button data-dl="${m}" aria-pressed="${dm===m?"true":"false"}">${m} min</button>`}).join("")}</div>`;
     h+=`<p class="gl danger">Zone sensible</p><div class="list"><button class="li" id="oub" style="--k:var(--rd)"><span class="ic">${I.trash}</span><span><b class="danger">Effacer le coffre</b><small>Supprime toutes les données de cet appareil</small></span></button></div>`;
   }else if(v==="reg_aff"){
     h+=regHead("Affichage","Réglages");
